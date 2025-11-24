@@ -1,0 +1,170 @@
+------------------------------------------------------------
+-- DROP TABLES IF EXISTS (בסדר הפוך בגלל קשרי ה-FK)
+------------------------------------------------------------
+IF OBJECT_ID('dbo.BillItems', 'U') IS NOT NULL DROP TABLE dbo.BillItems;
+IF OBJECT_ID('dbo.Bills', 'U') IS NOT NULL DROP TABLE dbo.Bills;
+IF OBJECT_ID('dbo.ShavingsOrders', 'U') IS NOT NULL DROP TABLE dbo.ShavingsOrders;
+IF OBJECT_ID('dbo.Stalls', 'U') IS NOT NULL DROP TABLE dbo.Stalls;
+IF OBJECT_ID('dbo.Entries', 'U') IS NOT NULL DROP TABLE dbo.Entries;
+IF OBJECT_ID('dbo.Payers', 'U') IS NOT NULL DROP TABLE dbo.Payers;
+IF OBJECT_ID('dbo.Horses', 'U') IS NOT NULL DROP TABLE dbo.Horses;
+IF OBJECT_ID('dbo.Riders', 'U') IS NOT NULL DROP TABLE dbo.Riders;
+IF OBJECT_ID('dbo.Competitions', 'U') IS NOT NULL DROP TABLE dbo.Competitions;
+
+------------------------------------------------------------
+-- 1. טבלת תחרויות – Competitions
+------------------------------------------------------------
+CREATE TABLE dbo.Competitions (
+    CompetitionId INT IDENTITY(1,1) PRIMARY KEY,
+    Name          NVARCHAR(100)   NOT NULL,
+    StartDate     DATE            NULL,
+    EndDate       DATE            NULL,
+    Location      NVARCHAR(200)   NULL,
+    CreatedAt     DATETIME        NOT NULL DEFAULT(GETDATE())
+);
+
+------------------------------------------------------------
+-- 2. טבלת רוכבים – Riders
+------------------------------------------------------------
+CREATE TABLE dbo.Riders (
+    RiderId     INT IDENTITY(1,1) PRIMARY KEY,
+    Name        NVARCHAR(100)   NOT NULL,
+    Phone       NVARCHAR(20)    NULL,
+    StableName  NVARCHAR(100)   NULL  -- החווה שהרוכב משויך אליה
+);
+
+------------------------------------------------------------
+-- 3. טבלת סוסים – Horses
+------------------------------------------------------------
+CREATE TABLE dbo.Horses (
+    HorseId     INT IDENTITY(1,1) PRIMARY KEY,
+    Name        NVARCHAR(100)   NOT NULL,
+    ChipNumber  NVARCHAR(50)    NULL,
+);
+
+------------------------------------------------------------
+-- 4. טבלת משלמים – Payers
+------------------------------------------------------------
+CREATE TABLE dbo.Payers (
+    PayerId     INT IDENTITY(1,1) PRIMARY KEY,
+    Name        NVARCHAR(100)   NOT NULL,
+    Phone       NVARCHAR(20)    NULL,
+    StableName  NVARCHAR(100)   NULL  -- אם זה חווה/מרכז חיוב
+);
+
+------------------------------------------------------------
+-- 5. טבלת כרטיסי משלם – Bills
+------------------------------------------------------------
+CREATE TABLE dbo.Bills (
+    BillId         INT IDENTITY(1,1) PRIMARY KEY,
+    PayerId        INT             NOT NULL,
+    CompetitionId  INT             NOT NULL,
+    Total          DECIMAL(10,2)   NOT NULL DEFAULT(0),
+
+    CONSTRAINT FK_Bills_Payers
+        FOREIGN KEY (PayerId) 
+        REFERENCES dbo.Payers(PayerId),
+
+    CONSTRAINT FK_Bills_Competitions
+        FOREIGN KEY (CompetitionId)
+        REFERENCES dbo.Competitions(CompetitionId)
+);
+
+------------------------------------------------------------
+-- 6. טבלת הרשמות למקצים – Entries
+------------------------------------------------------------
+CREATE TABLE dbo.Entries (
+    EntryId        INT IDENTITY(1,1) PRIMARY KEY,
+    CompetitionId  INT             NOT NULL,
+    HorseId        INT             NOT NULL,
+    RiderId        INT             NOT NULL,
+    PayerId        INT             NOT NULL,
+    StableName     NVARCHAR(100)   NULL,       -- חווה שהכניסה את הצמד
+    ClassName      NVARCHAR(100)   NOT NULL,   -- שם המקצה
+    Fee            DECIMAL(10,2)   NOT NULL,   -- מחיר כניסה
+    IsPaid         BIT             NOT NULL DEFAULT(0),
+
+    CONSTRAINT FK_Entries_Competitions
+        FOREIGN KEY (CompetitionId)
+        REFERENCES dbo.Competitions(CompetitionId),
+
+    CONSTRAINT FK_Entries_Horses
+        FOREIGN KEY (HorseId)
+        REFERENCES dbo.Horses(HorseId),
+
+    CONSTRAINT FK_Entries_Riders
+        FOREIGN KEY (RiderId)
+        REFERENCES dbo.Riders(RiderId),
+
+    CONSTRAINT FK_Entries_Payers
+        FOREIGN KEY (PayerId)
+        REFERENCES dbo.Payers(PayerId)
+);
+
+------------------------------------------------------------
+-- 7. טבלת תאים – Stalls
+------------------------------------------------------------
+CREATE TABLE dbo.Stalls (
+    StallId        INT IDENTITY(1,1) PRIMARY KEY,
+    CompetitionId  INT             NOT NULL,
+    HorseId        INT             NULL,         -- NULL אם זה תא ציוד בלבד
+    PayerId        INT             NOT NULL,
+    StableName     NVARCHAR(100)   NULL,
+    Days           INT             NOT NULL,
+    PricePerDay    DECIMAL(10,2)   NOT NULL,
+    Total          DECIMAL(10,2)   NOT NULL,
+    IsTackStall    BIT             NOT NULL DEFAULT(0), -- תא ציוד או תא סוס
+
+    CONSTRAINT FK_Stalls_Competitions
+        FOREIGN KEY (CompetitionId)
+        REFERENCES dbo.Competitions(CompetitionId),
+
+    CONSTRAINT FK_Stalls_Horses
+        FOREIGN KEY (HorseId)
+        REFERENCES dbo.Horses(HorseId),
+
+    CONSTRAINT FK_Stalls_Payers
+        FOREIGN KEY (PayerId)
+        REFERENCES dbo.Payers(PayerId)
+);
+
+------------------------------------------------------------
+-- 8. טבלת הזמנות נסורת – ShavingsOrders
+------------------------------------------------------------
+CREATE TABLE dbo.ShavingsOrders (
+    ShavingsId     INT IDENTITY(1,1) PRIMARY KEY,
+    CompetitionId  INT             NOT NULL,
+    HorseId        INT             NOT NULL,
+    PayerId        INT             NOT NULL,
+    StableName     NVARCHAR(100)   NULL,
+    Bags           INT             NOT NULL,
+    PricePerBag    DECIMAL(10,2)   NOT NULL,
+    Total          DECIMAL(10,2)   NOT NULL,
+
+    CONSTRAINT FK_Shavings_Competitions
+        FOREIGN KEY (CompetitionId)
+        REFERENCES dbo.Competitions(CompetitionId),
+
+    CONSTRAINT FK_Shavings_Horses
+        FOREIGN KEY (HorseId)
+        REFERENCES dbo.Horses(HorseId),
+
+    CONSTRAINT FK_Shavings_Payers
+        FOREIGN KEY (PayerId)
+        REFERENCES dbo.Payers(PayerId)
+);
+
+------------------------------------------------------------
+-- 9. טבלת שורות חיוב – BillItems
+------------------------------------------------------------
+CREATE TABLE dbo.BillItems (
+    BillItemId   INT IDENTITY(1,1) PRIMARY KEY,
+    BillId       INT             NOT NULL,
+    ServiceType  NVARCHAR(50)    NOT NULL,   -- 'Entry' / 'Stall' / 'Shavings'
+    Description  NVARCHAR(200)   NULL,
+    Amount       DECIMAL(10,2)   NOT NULL,
+
+    CONSTRAINT FK_BillItems_Bills
+        FOREIGN KEY (BillId)
+        REFERENCES dbo.Bills(BillId)
+);
