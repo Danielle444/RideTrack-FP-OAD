@@ -1,0 +1,6 @@
+@RideTrack_FP_OAD_HostAddress = http://localhost:5022
+
+GET {{RideTrack_FP_OAD_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
