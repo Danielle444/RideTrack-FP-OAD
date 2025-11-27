@@ -21,5 +21,19 @@ namespace RideTrack_FP_OAD.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
+        [HttpPost]
+        public IActionResult Post([FromBody] Entries entry)
+        {
+            try
+            {
+                int res = Entries.AddEntry(entry);
+                return Ok(res);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
     }
 }

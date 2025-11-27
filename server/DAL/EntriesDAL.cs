@@ -56,5 +56,46 @@ namespace RideTrack_FP_OAD.DAL
                 }
             }
         }
+
+        public int AddEntry(Entries entry)
+        {
+            try
+            {
+                connection = Connect("DefaultConnection");
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+            Dictionary<string,object> parmDic = new Dictionary<string,object>();
+            parmDic.Add("@RiderId", entry.RiderId);
+            parmDic.Add("@HorseId", entry.HorseId);
+            parmDic.Add("@PayerId", entry.PayerId);
+            parmDic.Add("@ClassId", entry.ClassId);
+            command = CreateCommandWithStoredProcedure("AddEntry", connection, parmDic);
+            try
+            {
+                reader = command.ExecuteReader(CommandBehavior.CloseConnection);
+                if (reader.Read())
+                {
+                    return Convert.ToInt32(reader["NewEntryId"].ToString());
+                }
+                else
+                {
+                    return -1;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+            finally
+            {
+                if (connection != null)
+                {
+                    connection.Close();
+                }
+            }
+        }
     }
 }

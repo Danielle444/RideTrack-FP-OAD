@@ -25,5 +25,11 @@ namespace RideTrack_FP_OAD.BL
             EntriesDAL entriesDAL = new EntriesDAL();
             return entriesDAL.GetAllEntries();
         }
+
+        internal static int AddEntry(Entries entry)
+        {
+            EntriesDAL entriesDAL = new EntriesDAL();
+            return entriesDAL.AddEntry(entry);
+        }
     }
 }
