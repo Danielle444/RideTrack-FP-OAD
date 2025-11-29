@@ -66,10 +66,10 @@ namespace RideTrack_FP_OAD.DAL
             }
             Dictionary<string, object> parmDic = new Dictionary<string, object>();
             parmDic.Add(@"PaidTimeId", paidTimes.PaidTimeId);
-            parmDic.Add("@RiderId", paidTimes.RiderId);
-            parmDic.Add("@HorseId", paidTimes.HorseId);
-            parmDic.Add("@PayerId", paidTimes.PayerId);
-            parmDic.Add("@CompetitionId", paidTimes.CompetitionId);
+            parmDic.Add(@"RiderId", paidTimes.RiderId);
+            parmDic.Add(@"HorseId", paidTimes.HorseId);
+            parmDic.Add(@"PayerId", paidTimes.PayerId);
+            parmDic.Add(@"CompetitionId", paidTimes.CompetitionId);
             parmDic.Add(@"ArenaName", paidTimes.ArenaName);
             parmDic.Add(@"Day", paidTimes.Day);
             parmDic.Add(@"SlotType", paidTimes.SlotType);
