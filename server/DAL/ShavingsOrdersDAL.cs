@@ -19,14 +19,17 @@ namespace RideTrack_FP_OAD.DAL
             {
                 throw ex;
             }
+
             command = CreateCommandWithStoredProcedure("GetAllShavingsOrders", connection, null);
+
             try
             {
-                List<ShavingsOrders> shavingOrder = new List<ShavingsOrders>();
+                List<ShavingsOrders> orders = new List<ShavingsOrders>();
                 reader = command.ExecuteReader(CommandBehavior.CloseConnection);
+
                 while (reader.Read())
                 {
-                    shavingOrder.Add(new ShavingsOrders
+                    orders.Add(new ShavingsOrders
                     {
                         ShavingsOrderId = Convert.ToInt32(reader["ShavingsOrderId"]),
                         StallId = Convert.ToInt32(reader["StallId"]),
@@ -34,9 +37,10 @@ namespace RideTrack_FP_OAD.DAL
                         BagsQuantity = Convert.ToInt32(reader["BagsQuantity"]),
                         PricePerBag = Convert.ToDecimal(reader["PricePerBag"]),
                         TotalPrice = Convert.ToDecimal(reader["TotalPrice"])
-                        });
+                    });
                 }
-                return shavingOrder;
+
+                return orders;
             }
             catch (Exception ex)
             {
@@ -51,7 +55,7 @@ namespace RideTrack_FP_OAD.DAL
             }
         }
 
-        public int AddShavingOrder(ShavingsOrders shavingOrder)
+        public List<ShavingsOrders> GetShavingsOrdersByPayerName(string payerName)
         {
             try
             {
@@ -61,19 +65,71 @@ namespace RideTrack_FP_OAD.DAL
             {
                 throw ex;
             }
+
             Dictionary<string, object> parmDic = new Dictionary<string, object>();
-            parmDic.Add("@RiderId", shavingOrder.StallId);
-            parmDic.Add("@HorseId", shavingOrder.OrderDate);
-            parmDic.Add("@PayerId", shavingOrder.BagsQuantity);
-            parmDic.Add("@CompetitionId", shavingOrder.PricePerBag);
-            parmDic.Add(@"ArenaName", shavingOrder.TotalPrice);
-            command = CreateCommandWithStoredProcedure("AddShavingOrders", connection, parmDic);
+            parmDic.Add("@PayerName", payerName);
+
+            command = CreateCommandWithStoredProcedure("GetShavingsOrdersByPayerName", connection, parmDic);
+
+            try
+            {
+                List<ShavingsOrders> orders = new List<ShavingsOrders>();
+                reader = command.ExecuteReader(CommandBehavior.CloseConnection);
+
+                while (reader.Read())
+                {
+                    orders.Add(new ShavingsOrders
+                    {
+                        ShavingsOrderId = Convert.ToInt32(reader["ShavingsOrderId"]),
+                        StallId = Convert.ToInt32(reader["StallId"]),
+                        OrderDate = Convert.ToDateTime(reader["OrderDate"]),
+                        BagsQuantity = Convert.ToInt32(reader["BagsQuantity"]),
+                        PricePerBag = Convert.ToDecimal(reader["PricePerBag"]),
+                        TotalPrice = Convert.ToDecimal(reader["TotalPrice"])
+                    });
+                }
+
+                return orders;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+            finally
+            {
+                if (connection != null)
+                {
+                    connection.Close();
+                }
+            }
+        }
+
+        public int AddShavingsOrder(ShavingsOrders order)
+        {
+            try
+            {
+                connection = Connect("DefaultConnection");
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+
+            Dictionary<string, object> parmDic = new Dictionary<string, object>();
+            parmDic.Add("@StallId", order.StallId);
+            parmDic.Add("@OrderDate", order.OrderDate);
+            parmDic.Add("@BagsQuantity", order.BagsQuantity);
+            parmDic.Add("@PricePerBag", order.PricePerBag);
+            parmDic.Add("@TotalPrice", order.TotalPrice);
+
+            command = CreateCommandWithStoredProcedure("AddShavingsOrder", connection, parmDic);
+
             try
             {
                 reader = command.ExecuteReader(CommandBehavior.CloseConnection);
                 if (reader.Read())
                 {
-                    return Convert.ToInt32(reader["NewShavingOrderId"].ToString());
+                    return Convert.ToInt32(reader["NewShavingsOrderId"].ToString());
                 }
                 else
                 {
@@ -92,5 +148,94 @@ namespace RideTrack_FP_OAD.DAL
                 }
             }
         }
+
+        public int UpdateShavingsOrder(ShavingsOrders order)
+        {
+            try
+            {
+                connection = Connect("DefaultConnection");
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+
+            Dictionary<string, object> parmDic = new Dictionary<string, object>();
+            parmDic.Add("@ShavingsOrderId", order.ShavingsOrderId);
+            parmDic.Add("@StallId", order.StallId);
+            parmDic.Add("@OrderDate", order.OrderDate);
+            parmDic.Add("@BagsQuantity", order.BagsQuantity);
+            parmDic.Add("@PricePerBag", order.PricePerBag);
+            parmDic.Add("@TotalPrice", order.TotalPrice);
+
+            command = CreateCommandWithStoredProcedure("UpdateShavingsOrder", connection, parmDic);
+
+            try
+            {
+                reader = command.ExecuteReader(CommandBehavior.CloseConnection);
+                if (reader.Read())
+                {
+                    return Convert.ToInt32(reader["RowsAffected"]);
+                }
+                else
+                {
+                    return 0;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+            finally
+            {
+                if (connection != null)
+                {
+                    connection.Close();
+                }
+            }
+        }
+
+        public int DeleteShavingsOrder(int shavingsOrderId)
+        {
+            try
+            {
+                connection = Connect("DefaultConnection");
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+
+            Dictionary<string, object> parmDic = new Dictionary<string, object>();
+            parmDic.Add("@ShavingsOrderId", shavingsOrderId);
+
+            command = CreateCommandWithStoredProcedure("DeleteShavingsOrder", connection, parmDic);
+
+            try
+            {
+                reader = command.ExecuteReader(CommandBehavior.CloseConnection);
+                if (reader.Read())
+                {
+                    return Convert.ToInt32(reader["RowsAffected"]);
+                }
+                else
+                {
+                    return 0;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+            finally
+            {
+                if (connection != null)
+                {
+                    connection.Close();
+                }
+            }
+        }
+
     }
 }
+
