@@ -30,7 +30,7 @@ namespace RideTrack_FP_OAD.BL
 
         internal static List<Entries> GetEntriesByPayerName(string payerName)
         {
-            if (payerName == null)
+            if (string.IsNullOrWhiteSpace(payerName))
             {
                 throw new ArgumentException("Payer name cannot be empty!");
             }

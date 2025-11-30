@@ -122,7 +122,6 @@ namespace RideTrack_FP_OAD.DAL
                 throw ex;
             }
             Dictionary<string, object> parmDic = new Dictionary<string, object>();
-            parmDic.Add("@EntryId", entry.EntryId);
             parmDic.Add("@RiderId", entry.RiderId);
             parmDic.Add("@HorseId", entry.HorseId);
             parmDic.Add("@PayerId", entry.PayerId);
