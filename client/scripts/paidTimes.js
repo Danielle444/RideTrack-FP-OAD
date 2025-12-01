@@ -1,3 +1,8 @@
+/* ================================================
+   RideTrack - Paid Times Module
+   ניהול פייד טיים (מתוקן)
+   ================================================ */
+
 const paidTimes = {
     currentData: [],
 
@@ -9,112 +14,113 @@ const paidTimes = {
 
     async loadPaidTimes() {
         try {
-            ui.showLoading();
+            UI.showLoading(); // תוקן ל-UI
             console.log('📡 Loading paid times from API...');
             
-            const data = await api.paidTimes.getAll();
+            const data = await API.paidTimes.getAll(); // תוקן ל-API
             console.log('✅ Paid times loaded:', data);
             
             this.currentData = data || [];
             this.displayPaidTimes(this.currentData);
             
-            ui.updateStats('paidtimes', this.currentData.length);
+            // עדכון המונה בדשבורד - לפי ה-ID ב-HTML
+            const totalElement = document.getElementById('totalPaidTimes');
+            if (totalElement) {
+                totalElement.innerText = this.currentData.length;
+                totalElement.setAttribute('data-target', this.currentData.length);
+            }
             
+            UI.hideEmptyState('paidTimesEmptyState');
         } catch (error) {
             console.error('❌ Error loading paid times:', error);
-            ui.showToast('error', 'שגיאה', 'לא הצלחנו לטעון את הפייד טיימס. נסה שוב.');
+            UI.showToast('error', 'שגיאה', 'לא הצלחנו לטעון את הפייד טיימס. נסה שוב.');
             this.currentData = [];
             this.displayPaidTimes([]);
+            UI.showEmptyState('paidTimesEmptyState');
         } finally {
-            ui.hideLoading();
+            UI.hideLoading();
         }
     },
 
     displayPaidTimes(data) {
-        const container = document.getElementById('paidtimes-grid');
+        // תוקן ל-ID הנכון ב-HTML
+        const container = document.getElementById('paidTimesGrid'); 
         
         if (!container) {
-            console.error('❌ Paid times grid container not found!');
+            console.error('❌ Paid times grid container (paidTimesGrid) not found!');
             return;
         }
 
         if (!data || data.length === 0) {
-            container.innerHTML = '<div class="empty-state">אין פייד טיימס להצגה</div>';
-            ui.showEmptyState();
+            container.innerHTML = '';
+            UI.showEmptyState('paidTimesEmptyState');
             return;
         }
 
-        ui.hideEmptyState();
+        UI.hideEmptyState('paidTimesEmptyState');
         container.innerHTML = data.map(pt => this.createPaidTimeCard(pt)).join('');
     },
 
     createPaidTimeCard(paidTime) {
-        const slotTypeDisplay = paidTime.slotType === 'Short' ? 'קצר' : 'ארוך';
-        const dateDisplay = paidTime.day ? new Date(paidTime.day).toLocaleDateString('he-IL') : 'לא צוין';
+        // טיפול ב-Case Sensitivity
+        const id = paidTime.paidTimeId || paidTime.PaidTimeId;
+        const compId = paidTime.competitionId || paidTime.CompetitionId;
+        const rId = paidTime.riderId || paidTime.RiderId;
+        const hId = paidTime.horseId || paidTime.HorseId;
+        const pId = paidTime.payerId || paidTime.PayerId;
+        const arena = paidTime.arenaName || paidTime.ArenaName || 'זירה לא ידועה';
+        const type = paidTime.slotType || paidTime.SlotType;
+        const date = paidTime.day || paidTime.Day;
+        const price = paidTime.price || paidTime.Price;
+
+        const slotTypeDisplay = type === 'Short' ? 'קצר' : 'ארוך';
+        const badgeClass = type === 'Short' ? 'badge-warning' : 'badge-info';
         
         return `
-            <div class="card" data-id="${paidTime.paidTimeId}">
+            <div class="data-card" data-id="${id}">
                 <div class="card-header">
-                    <h3>
+                    <h3 class="card-title">
                         <i class="fas fa-clock"></i>
-                        ${paidTime.arenaName || 'זירה לא ידועה'}
+                        ${arena}
                     </h3>
-                    <span class="badge ${paidTime.slotType === 'Short' ? 'badge-warning' : 'badge-info'}">
+                    <span class="card-badge ${badgeClass}">
                         ${slotTypeDisplay}
                     </span>
                 </div>
                 <div class="card-body">
-                    <div class="info-row">
-                        <span class="label">
-                            <i class="fas fa-trophy"></i>
-                            תחרות:
-                        </span>
-                        <span class="value">#${paidTime.competitionId}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="label">
-                            <i class="fas fa-user"></i>
-                            רוכב:
-                        </span>
-                        <span class="value">#${paidTime.riderId}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="label">
-                            <i class="fas fa-horse"></i>
-                            סוס:
-                        </span>
-                        <span class="value">#${paidTime.horseId}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="label">
-                            <i class="fas fa-user-tie"></i>
-                            משלם:
-                        </span>
-                        <span class="value">#${paidTime.payerId}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="label">
-                            <i class="fas fa-calendar"></i>
-                            תאריך:
-                        </span>
-                        <span class="value">${dateDisplay}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="label">
-                            <i class="fas fa-shekel-sign"></i>
-                            מחיר:
-                        </span>
-                        <span class="value price">₪${paidTime.price ? paidTime.price.toFixed(2) : '0.00'}</span>
+                    <div class="card-info">
+                        <div class="info-row">
+                            <span class="info-label"><i class="fas fa-trophy"></i> תחרות:</span>
+                            <span class="info-value">#${compId}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label"><i class="fas fa-user"></i> רוכב:</span>
+                            <span class="info-value">#${rId}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label"><i class="fas fa-horse"></i> סוס:</span>
+                            <span class="info-value">#${hId}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label"><i class="fas fa-user-tie"></i> משלם:</span>
+                            <span class="info-value">#${pId}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label"><i class="fas fa-calendar"></i> תאריך:</span>
+                            <span class="info-value">${typeof DateUtils !== 'undefined' ? DateUtils.formatDate(date) : date}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label"><i class="fas fa-dollar-sign"></i> מחיר:</span>
+                            <span class="info-value">${typeof NumberUtils !== 'undefined' ? NumberUtils.formatPrice(price) : price}</span>
+                        </div>
                     </div>
                 </div>
-                <div class="card-actions">
-                    <button class="btn btn-edit" onclick="paidTimes.showEditForm(${paidTime.paidTimeId})">
-                        <i class="fas fa-edit"></i>
-                        עריכה
+                <div class="card-footer">
+                    <button class="btn btn-sm btn-primary" onclick="paidTimes.showEditForm(${id})">
+                        <i class="fas fa-edit"></i> ערוך
                     </button>
-                    <button class="btn btn-delete" onclick="paidTimes.confirmDelete(${paidTime.paidTimeId})">
-                        <i class="fas fa-trash"></i>
-                        מחיקה
+                    <button class="btn btn-sm btn-danger" onclick="paidTimes.confirmDelete(${id})">
+                        <i class="fas fa-trash"></i> מחיקה
                     </button>
                 </div>
             </div>
@@ -124,425 +130,242 @@ const paidTimes = {
     showAddForm() {
         const formHtml = `
             <form id="paidtime-form" class="modal-form">
-                <div class="form-group">
-                    <label for="pt-competitionId">
-                        <i class="fas fa-trophy"></i>
-                        מזהה תחרות
-                        <span class="required">*</span>
-                    </label>
-                    <input 
-                        type="number" 
-                        id="pt-competitionId" 
-                        name="competitionId" 
-                        required 
-                        min="1"
-                        placeholder="הזן מזהה תחרות">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label required">מזהה תחרות</label>
+                        <input type="number" class="form-input" id="pt-competitionId" required min="1">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label required">מזהה רוכב</label>
+                        <input type="number" class="form-input" id="pt-riderId" required min="1">
+                    </div>
                 </div>
-
-                <div class="form-group">
-                    <label for="pt-riderId">
-                        <i class="fas fa-user"></i>
-                        מזהה רוכב
-                        <span class="required">*</span>
-                    </label>
-                    <input 
-                        type="number" 
-                        id="pt-riderId" 
-                        name="riderId" 
-                        required 
-                        min="1"
-                        placeholder="הזן מזהה רוכב">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label required">מזהה סוס</label>
+                        <input type="number" class="form-input" id="pt-horseId" required min="1">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label required">מזהה משלם</label>
+                        <input type="number" class="form-input" id="pt-payerId" required min="1">
+                    </div>
                 </div>
-
-                <div class="form-group">
-                    <label for="pt-horseId">
-                        <i class="fas fa-horse"></i>
-                        מזהה סוס
-                        <span class="required">*</span>
-                    </label>
-                    <input 
-                        type="number" 
-                        id="pt-horseId" 
-                        name="horseId" 
-                        required 
-                        min="1"
-                        placeholder="הזן מזהה סוס">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label required">שם זירה</label>
+                        <input type="text" class="form-input" id="pt-arenaName" required placeholder="לדוגמה: זירה A">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label required">תאריך</label>
+                        <input type="date" class="form-input" id="pt-day" required>
+                    </div>
                 </div>
-
-                <div class="form-group">
-                    <label for="pt-payerId">
-                        <i class="fas fa-user-tie"></i>
-                        מזהה משלם
-                        <span class="required">*</span>
-                    </label>
-                    <input 
-                        type="number" 
-                        id="pt-payerId" 
-                        name="payerId" 
-                        required 
-                        min="1"
-                        placeholder="הזן מזהה משלם">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label required">סוג סלוט</label>
+                        <select id="pt-slotType" class="form-input" required>
+                            <option value="">בחר סוג סלוט</option>
+                            <option value="Short">קצר (Short)</option>
+                            <option value="Long">ארוך (Long)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label required">מחיר</label>
+                        <input type="number" class="form-input" id="pt-price" required min="0" step="0.01">
+                    </div>
                 </div>
-
-                <div class="form-group">
-                    <label for="pt-arenaName">
-                        <i class="fas fa-map-marker-alt"></i>
-                        שם זירה
-                        <span class="required">*</span>
-                    </label>
-                    <input 
-                        type="text" 
-                        id="pt-arenaName" 
-                        name="arenaName" 
-                        required
-                        placeholder="הזן שם זירה (לדוגמה: זירה A)">
-                </div>
-
-                <div class="form-group">
-                    <label for="pt-day">
-                        <i class="fas fa-calendar"></i>
-                        תאריך
-                        <span class="required">*</span>
-                    </label>
-                    <input 
-                        type="date" 
-                        id="pt-day" 
-                        name="day" 
-                        required>
-                </div>
-
-                <div class="form-group">
-                    <label for="pt-slotType">
-                        <i class="fas fa-clock"></i>
-                        סוג סלוט
-                        <span class="required">*</span>
-                    </label>
-                    <select id="pt-slotType" name="slotType" required>
-                        <option value="">בחר סוג סלוט</option>
-                        <option value="Short">קצר (Short)</option>
-                        <option value="Long">ארוך (Long)</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="pt-price">
-                        <i class="fas fa-shekel-sign"></i>
-                        מחיר
-                        <span class="required">*</span>
-                    </label>
-                    <input 
-                        type="number" 
-                        id="pt-price" 
-                        name="price" 
-                        required 
-                        min="0" 
-                        step="0.01"
-                        placeholder="הזן מחיר">
-                </div>
-
                 <div class="form-actions">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save"></i>
-                        שמור
+                    <button type="button" class="btn btn-primary" onclick="paidTimes.savePaidTime()">
+                        <i class="fas fa-save"></i> שמור
                     </button>
-                    <button type="button" class="btn btn-secondary" onclick="ui.hideModal()">
-                        <i class="fas fa-times"></i>
-                        ביטול
+                    <button type="button" class="btn btn-secondary" onclick="UI.hideModal()">
+                        <i class="fas fa-times"></i> ביטול
                     </button>
                 </div>
             </form>
         `;
 
-        ui.showModal('הוספת פייד טיים חדש', formHtml);
-
-        document.getElementById('paidtime-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            await this.savePaidTime();
-        });
+        UI.showModal('הוספת פייד טיים חדש', formHtml);
     },
 
     async savePaidTime() {
-        const form = document.getElementById('paidtime-form');
-        
-        if (!ui.validateForm('paidtime-form')) {
-            ui.showToast('warning', 'שים לב', 'אנא מלא את כל השדות הנדרשים');
+        if (!UI.validateForm('paidtime-form')) {
+            UI.showToast('warning', 'שים לב', 'אנא מלא את כל השדות הנדרשים');
             return;
         }
 
-        const formData = new FormData(form);
         const paidTimeData = {
-            competitionId: parseInt(formData.get('competitionId')),
-            riderId: parseInt(formData.get('riderId')),
-            horseId: parseInt(formData.get('horseId')),
-            payerId: parseInt(formData.get('payerId')),
-            arenaName: formData.get('arenaName').trim(),
-            day: formData.get('day'),
-            slotType: formData.get('slotType'),
-            price: parseFloat(formData.get('price'))
+            competitionId: parseInt(document.getElementById('pt-competitionId').value),
+            riderId: parseInt(document.getElementById('pt-riderId').value),
+            horseId: parseInt(document.getElementById('pt-horseId').value),
+            payerId: parseInt(document.getElementById('pt-payerId').value),
+            arenaName: document.getElementById('pt-arenaName').value.trim(),
+            day: document.getElementById('pt-day').value,
+            slotType: document.getElementById('pt-slotType').value,
+            price: parseFloat(document.getElementById('pt-price').value)
         };
 
         try {
-            ui.showLoading();
-            console.log('💾 Saving paid time:', paidTimeData);
-            
-            await api.paidTimes.add(paidTimeData);
-            
-            ui.hideModal();
-            ui.showToast('success', 'הצלחה!', 'הפייד טיים נוסף בהצלחה');
-            
-            // רענון הנתונים
+            UI.showLoading();
+            await API.paidTimes.add(paidTimeData);
+            UI.hideModal();
+            UI.showToast('success', 'הצלחה!', 'הפייד טיים נוסף בהצלחה');
             await this.loadPaidTimes();
-            
         } catch (error) {
             console.error('❌ Error saving paid time:', error);
-            ui.showToast('error', 'שגיאה', 'לא הצלחנו לשמור את הפייד טיים. נסה שוב.');
+            UI.showToast('error', 'שגיאה', 'לא הצלחנו לשמור את הפייד טיים');
         } finally {
-            ui.hideLoading();
+            UI.hideLoading();
         }
     },
 
-    async showEditForm(paidTimeId) {
-        try {
-            ui.showLoading();
-            
-            const paidTime = this.currentData.find(pt => pt.paidTimeId === paidTimeId);
-            
-            if (!paidTime) {
-                throw new Error('Paid time not found');
-            }
+    showEditForm(paidTimeId) {
+        // חיפוש גמיש בנתונים
+        const paidTime = this.currentData.find(pt => (pt.paidTimeId || pt.PaidTimeId) == paidTimeId);
+        
+        if (!paidTime) {
+            UI.showToast('error', 'שגיאה', 'הפייד טיים לא נמצא');
+            return;
+        }
 
-            const formHtml = `
-                <form id="paidtime-edit-form" class="modal-form">
-                    <input type="hidden" id="edit-paidTimeId" value="${paidTime.paidTimeId}">
-                    
+        // מיפוי שדות
+        const id = paidTime.paidTimeId || paidTime.PaidTimeId;
+        const cId = paidTime.competitionId || paidTime.CompetitionId;
+        const rId = paidTime.riderId || paidTime.RiderId;
+        const hId = paidTime.horseId || paidTime.HorseId;
+        const pId = paidTime.payerId || paidTime.PayerId;
+        const arena = paidTime.arenaName || paidTime.ArenaName;
+        const day = paidTime.day || paidTime.Day;
+        const type = paidTime.slotType || paidTime.SlotType;
+        const price = paidTime.price || paidTime.Price;
+
+        const formHtml = `
+            <form id="paidtime-edit-form" class="modal-form">
+                <input type="hidden" id="edit-paidTimeId" value="${id}">
+                
+                <div class="form-row">
                     <div class="form-group">
-                        <label for="edit-competitionId">
-                            <i class="fas fa-trophy"></i>
-                            מזהה תחרות
-                            <span class="required">*</span>
-                        </label>
-                        <input 
-                            type="number" 
-                            id="edit-competitionId" 
-                            name="competitionId" 
-                            value="${paidTime.competitionId}"
-                            required 
-                            min="1">
+                        <label class="form-label required">מזהה תחרות</label>
+                        <input type="number" class="form-input" id="edit-competitionId" value="${cId}" required min="1">
                     </div>
-
                     <div class="form-group">
-                        <label for="edit-riderId">
-                            <i class="fas fa-user"></i>
-                            מזהה רוכב
-                            <span class="required">*</span>
-                        </label>
-                        <input 
-                            type="number" 
-                            id="edit-riderId" 
-                            name="riderId" 
-                            value="${paidTime.riderId}"
-                            required 
-                            min="1">
+                        <label class="form-label required">מזהה רוכב</label>
+                        <input type="number" class="form-input" id="edit-riderId" value="${rId}" required min="1">
                     </div>
-
+                </div>
+                <div class="form-row">
                     <div class="form-group">
-                        <label for="edit-horseId">
-                            <i class="fas fa-horse"></i>
-                            מזהה סוס
-                            <span class="required">*</span>
-                        </label>
-                        <input 
-                            type="number" 
-                            id="edit-horseId" 
-                            name="horseId" 
-                            value="${paidTime.horseId}"
-                            required 
-                            min="1">
+                        <label class="form-label required">מזהה סוס</label>
+                        <input type="number" class="form-input" id="edit-horseId" value="${hId}" required min="1">
                     </div>
-
                     <div class="form-group">
-                        <label for="edit-payerId">
-                            <i class="fas fa-user-tie"></i>
-                            מזהה משלם
-                            <span class="required">*</span>
-                        </label>
-                        <input 
-                            type="number" 
-                            id="edit-payerId" 
-                            name="payerId" 
-                            value="${paidTime.payerId}"
-                            required 
-                            min="1">
+                        <label class="form-label required">מזהה משלם</label>
+                        <input type="number" class="form-input" id="edit-payerId" value="${pId}" required min="1">
                     </div>
-
+                </div>
+                <div class="form-row">
                     <div class="form-group">
-                        <label for="edit-arenaName">
-                            <i class="fas fa-map-marker-alt"></i>
-                            שם זירה
-                            <span class="required">*</span>
-                        </label>
-                        <input 
-                            type="text" 
-                            id="edit-arenaName" 
-                            name="arenaName" 
-                            value="${paidTime.arenaName || ''}"
-                            required>
+                        <label class="form-label required">שם זירה</label>
+                        <input type="text" class="form-input" id="edit-arenaName" value="${arena}" required>
                     </div>
-
                     <div class="form-group">
-                        <label for="edit-day">
-                            <i class="fas fa-calendar"></i>
-                            תאריך
-                            <span class="required">*</span>
-                        </label>
-                        <input 
-                            type="date" 
-                            id="edit-day" 
-                            name="day" 
-                            value="${paidTime.day ? paidTime.day.split('T')[0] : ''}"
-                            required>
+                        <label class="form-label required">תאריך</label>
+                        <input type="date" class="form-input" id="edit-day" value="${typeof DateUtils !== 'undefined' ? DateUtils.toISO(day) : day}" required>
                     </div>
-
+                </div>
+                <div class="form-row">
                     <div class="form-group">
-                        <label for="edit-slotType">
-                            <i class="fas fa-clock"></i>
-                            סוג סלוט
-                            <span class="required">*</span>
-                        </label>
-                        <select id="edit-slotType" name="slotType" required>
-                            <option value="Short" ${paidTime.slotType === 'Short' ? 'selected' : ''}>קצר (Short)</option>
-                            <option value="Long" ${paidTime.slotType === 'Long' ? 'selected' : ''}>ארוך (Long)</option>
+                        <label class="form-label required">סוג סלוט</label>
+                        <select id="edit-slotType" class="form-input" required>
+                            <option value="Short" ${type === 'Short' ? 'selected' : ''}>קצר (Short)</option>
+                            <option value="Long" ${type === 'Long' ? 'selected' : ''}>ארוך (Long)</option>
                         </select>
                     </div>
-
                     <div class="form-group">
-                        <label for="edit-price">
-                            <i class="fas fa-shekel-sign"></i>
-                            מחיר
-                            <span class="required">*</span>
-                        </label>
-                        <input 
-                            type="number" 
-                            id="edit-price" 
-                            name="price" 
-                            value="${paidTime.price || 0}"
-                            required 
-                            min="0" 
-                            step="0.01">
+                        <label class="form-label required">מחיר</label>
+                        <input type="number" class="form-input" id="edit-price" value="${price}" required min="0" step="0.01">
                     </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-primary" onclick="paidTimes.updatePaidTime()">
+                        <i class="fas fa-save"></i> עדכן
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="UI.hideModal()">
+                        <i class="fas fa-times"></i> ביטול
+                    </button>
+                </div>
+            </form>
+        `;
 
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save"></i>
-                            עדכן
-                        </button>
-                        <button type="button" class="btn btn-secondary" onclick="ui.hideModal()">
-                            <i class="fas fa-times"></i>
-                            ביטול
-                        </button>
-                    </div>
-                </form>
-            `;
-
-            ui.showModal('עריכת פייד טיים', formHtml);
-
-            document.getElementById('paidtime-edit-form').addEventListener('submit', async (e) => {
-                e.preventDefault();
-                await this.updatePaidTime();
-            });
-
-        } catch (error) {
-            console.error('❌ Error showing edit form:', error);
-            ui.showToast('error', 'שגיאה', 'לא הצלחנו לטעון את הפייד טיים לעריכה');
-        } finally {
-            ui.hideLoading();
-        }
+        UI.showModal('עריכת פייד טיים', formHtml);
     },
 
     async updatePaidTime() {
-        const form = document.getElementById('paidtime-edit-form');
-        
-        if (!ui.validateForm('paidtime-edit-form')) {
-            ui.showToast('warning', 'שים לב', 'אנא מלא את כל השדות הנדרשים');
+        if (!UI.validateForm('paidtime-edit-form')) {
+            UI.showToast('warning', 'שים לב', 'אנא מלא את כל השדות הנדרשים');
             return;
         }
 
-        const formData = new FormData(form);
         const paidTimeData = {
             paidTimeId: parseInt(document.getElementById('edit-paidTimeId').value),
-            competitionId: parseInt(formData.get('competitionId')),
-            riderId: parseInt(formData.get('riderId')),
-            horseId: parseInt(formData.get('horseId')),
-            payerId: parseInt(formData.get('payerId')),
-            arenaName: formData.get('arenaName').trim(),
-            day: formData.get('day'),
-            slotType: formData.get('slotType'),
-            price: parseFloat(formData.get('price'))
+            competitionId: parseInt(document.getElementById('edit-competitionId').value),
+            riderId: parseInt(document.getElementById('edit-riderId').value),
+            horseId: parseInt(document.getElementById('edit-horseId').value),
+            payerId: parseInt(document.getElementById('edit-payerId').value),
+            arenaName: document.getElementById('edit-arenaName').value.trim(),
+            day: document.getElementById('edit-day').value,
+            slotType: document.getElementById('edit-slotType').value,
+            price: parseFloat(document.getElementById('edit-price').value)
         };
 
         try {
-            ui.showLoading();
-            console.log('💾 Updating paid time:', paidTimeData);
-            
-            await api.paidTimes.update(paidTimeData);
-            
-            ui.hideModal();
-            ui.showToast('success', 'הצלחה!', 'הפייד טיים עודכן בהצלחה');
-            
+            UI.showLoading();
+            await API.paidTimes.update(paidTimeData);
+            UI.hideModal();
+            UI.showToast('success', 'הצלחה!', 'הפייד טיים עודכן בהצלחה');
             await this.loadPaidTimes();
-            
         } catch (error) {
             console.error('❌ Error updating paid time:', error);
-            ui.showToast('error', 'שגיאה', 'לא הצלחנו לעדכן את הפייד טיים. נסה שוב.');
+            UI.showToast('error', 'שגיאה', 'לא הצלחנו לעדכן את הפייד טיים');
         } finally {
-            ui.hideLoading();
+            UI.hideLoading();
         }
     },
 
     confirmDelete(paidTimeId) {
-        const paidTime = this.currentData.find(pt => pt.paidTimeId === paidTimeId);
-        
-        if (!paidTime) {
-            ui.showToast('error', 'שגיאה', 'הפייד טיים לא נמצא');
-            return;
-        }
-
-        ui.confirm(
+        UI.confirm(
             'אישור מחיקה',
-            `האם אתה בטוח שברצונך למחוק את הפייד טיים בזירה "${paidTime.arenaName}"?`,
+            'האם אתה בטוח שברצונך למחוק את הפייד טיים הזה?',
             () => this.deletePaidTime(paidTimeId)
         );
     },
 
     async deletePaidTime(paidTimeId) {
         try {
-            ui.showLoading();
-            console.log('🗑️ Deleting paid time:', paidTimeId);
-            
-            await api.paidTimes.delete(paidTimeId);
-            
-            ui.showToast('success', 'הצלחה!', 'הפייד טיים נמחק בהצלחה');
-            
+            UI.showLoading();
+            await API.paidTimes.delete(paidTimeId);
+            UI.showToast('success', 'הצלחה!', 'הפייד טיים נמחק בהצלחה');
             await this.loadPaidTimes();
-            
         } catch (error) {
             console.error('❌ Error deleting paid time:', error);
-            ui.showToast('error', 'שגיאה', 'לא הצלחנו למחוק את הפייד טיים. נסה שוב.');
+            UI.showToast('error', 'שגיאה', 'לא הצלחנו למחוק את הפייד טיים');
         } finally {
-            ui.hideLoading();
+            UI.hideLoading();
         }
     },
 
     searchPaidTimes(searchText) {
+        if (!searchText) {
+            this.displayPaidTimes(this.currentData);
+            return;
+        }
+
+        const search = searchText.toLowerCase();
         const filtered = this.currentData.filter(pt => {
-            const search = searchText.toLowerCase();
             return (
-                (pt.arenaName && pt.arenaName.toLowerCase().includes(search)) ||
-                (pt.slotType && pt.slotType.toLowerCase().includes(search)) ||
-                pt.competitionId.toString().includes(search) ||
-                pt.riderId.toString().includes(search) ||
-                pt.horseId.toString().includes(search) ||
-                pt.payerId.toString().includes(search)
+                (pt.arenaName || pt.ArenaName || '').toLowerCase().includes(search) ||
+                (pt.slotType || pt.SlotType || '').toLowerCase().includes(search) ||
+                (pt.competitionId || pt.CompetitionId || '').toString().includes(search)
             );
         });
 
@@ -550,13 +373,19 @@ const paidTimes = {
     },
 
     setupEventListeners() {
-        
-        const addBtn = document.getElementById('add-paidtime-btn');
+        // שימוש ב-ID הנכון מה-HTML (addPaidTimeBtn)
+        const addBtn = document.getElementById('addPaidTimeBtn');
         if (addBtn) {
             addBtn.addEventListener('click', () => this.showAddForm());
         }
 
-        const searchInput = document.getElementById('paidtimes-search');
+        const refreshBtn = document.getElementById('refreshPaidTimes');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', () => this.loadPaidTimes());
+        }
+
+        // שימוש ב-ID הנכון מה-HTML (searchPaidTimes)
+        const searchInput = document.getElementById('searchPaidTimes');
         if (searchInput) {
             let debounceTimer;
             searchInput.addEventListener('input', (e) => {
@@ -570,7 +399,3 @@ const paidTimes = {
         console.log('✅ Paid Times event listeners set up');
     }
 };
-
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = paidTimes;
-}

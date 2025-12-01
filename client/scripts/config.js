@@ -30,11 +30,11 @@ const API_ENDPOINTS = {
         delete: (id) => `/ShavingOrders/${id}`
     },
     paidTimes: {
-        getAll: '/PaidTimes',
-        getByPayer: (payerName) => `/PaidTimes/bypayer/${encodeURIComponent(payerName)}`,
-        add: '/PaidTimes',
-        update: '/PaidTimes',
-        delete: (id) => `/PaidTimes/${id}`
+        getAll: '/PaidTime', 
+        getByPayer: (payerName) => `/PaidTime/bypayer/${encodeURIComponent(payerName)}`,
+        add: '/PaidTime',
+        update: '/PaidTime',
+        delete: (id) => `/PaidTime/${id}`
     }
 };
 

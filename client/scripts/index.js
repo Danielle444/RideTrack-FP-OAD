@@ -5,10 +5,38 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     setupModalHandlers();
 
+    // 1. טעינת נתונים ראשונית לדשבורד (Eager Loading)
+    await updateDashboardCounts();
+
+    // 2. טעינת הסקשן הראשון (הטבלה התחתונה)
     await loadSection('entries');
 
-    await entries.init();
+    if (typeof entries !== 'undefined') {
+        await entries.init();
+    }
 });
+
+// הפונקציה החדשה לטעינת המונים - מותאמת ל-HTML שלך
+async function updateDashboardCounts() {
+    try {
+        // שליחת 4 בקשות במקביל
+        const [allEntries, allStalls, allShavings, allPaidTimes] = await Promise.all([
+            API.entries.getAll(),
+            API.stalls.getAll(),
+            API.shavingsOrders.getAll(),
+            API.paidTimes.getAll()
+        ]);
+
+        // עדכון המספרים ב-HTML לפי ה-IDs הנכונים
+        if (allEntries) document.getElementById('totalEntries').innerText = allEntries.length;
+        if (allStalls) document.getElementById('totalStalls').innerText = allStalls.length;
+        if (allShavings) document.getElementById('totalShavings').innerText = allShavings.length;
+        if (allPaidTimes) document.getElementById('totalPaidTimes').innerText = allPaidTimes.length;
+
+    } catch (error) {
+        console.error("Error updating dashboard counts:", error);
+    }
+}
 
 function setupNavigation() {
     const navLinks = document.querySelectorAll('.nav-link');

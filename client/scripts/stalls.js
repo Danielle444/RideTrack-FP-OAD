@@ -1,18 +1,33 @@
+/* ================================================
+   RideTrack - Stalls Module
+   ניהול תאים (מתוקן)
+   ================================================ */
+
 const stalls = {
     currentData: [],
 
     async init() {
-        await this.loadStalls();
         this.setupEventListeners();
+        await this.loadStalls();
     },
 
     async loadStalls() {
         try {
             UI.showLoading();
             const data = await API.stalls.getAll();
+            
+            console.log('Stalls Data Loaded:', data); // לדיבאג
+
             this.currentData = data;
             this.displayStalls(data);
-            UI.updateStats('stalls', data.length);
+
+            // עדכון המונה בדשבורד
+            const totalElement = document.getElementById('totalStalls');
+            if (totalElement) {
+                totalElement.innerText = data.length;
+                totalElement.setAttribute('data-target', data.length);
+            }
+
             UI.hideEmptyState('stallsEmptyState');
         } catch (error) {
             console.error('Error loading stalls:', error);
@@ -37,69 +52,59 @@ const stalls = {
     },
 
     createStallCard(stall) {
+        // טיפול ב-Case Sensitivity
+        const id = stall.stallId || stall.StallId;
+        const number = stall.stallNumber || stall.StallNumber;
+        const horse = stall.horseName || stall.HorseName || 'N/A';
+        const payer = stall.payerName || stall.PayerName || 'N/A';
+        const comp = stall.competitionName || stall.CompetitionName || 'N/A';
+        const arrival = stall.arrivalDate || stall.ArrivalDate;
+        const departure = stall.departureDate || stall.DepartureDate;
+        const total = stall.totalPrice || stall.TotalPrice;
+
         return `
-            <div class="data-card" data-stall-id="${stall.stallId}">
+            <div class="data-card" data-stall-id="${id}">
                 <div class="card-header">
                     <h3 class="card-title">
                         <i class="fas fa-warehouse"></i>
-                        תא #${stall.stallNumber}
+                        תא #${number}
                     </h3>
-                    <span class="card-badge badge-success">#${stall.stallId}</span>
+                    <span class="card-badge badge-success">#${id}</span>
                 </div>
                 <div class="card-body">
                     <div class="card-info">
                         <div class="info-row">
-                            <span class="info-label">
-                                <i class="fas fa-horse"></i>
-                                סוס:
-                            </span>
-                            <span class="info-value">${stall.horseName || 'N/A'}</span>
+                            <span class="info-label"><i class="fas fa-horse"></i> סוס:</span>
+                            <span class="info-value">${horse}</span>
                         </div>
                         <div class="info-row">
-                            <span class="info-label">
-                                <i class="fas fa-credit-card"></i>
-                                משלם:
-                            </span>
-                            <span class="info-value">${stall.payerName || 'N/A'}</span>
+                            <span class="info-label"><i class="fas fa-credit-card"></i> משלם:</span>
+                            <span class="info-value">${payer}</span>
                         </div>
                         <div class="info-row">
-                            <span class="info-label">
-                                <i class="fas fa-trophy"></i>
-                                תחרות:
-                            </span>
-                            <span class="info-value">${stall.competitionName || 'N/A'}</span>
+                            <span class="info-label"><i class="fas fa-trophy"></i> תחרות:</span>
+                            <span class="info-value">${comp}</span>
                         </div>
                         <div class="info-row">
-                            <span class="info-label">
-                                <i class="fas fa-calendar-check"></i>
-                                הגעה:
-                            </span>
-                            <span class="info-value">${DateUtils.formatDate(stall.arrivalDate)}</span>
+                            <span class="info-label"><i class="fas fa-calendar-check"></i> הגעה:</span>
+                            <span class="info-value">${typeof DateUtils !== 'undefined' ? DateUtils.formatDate(arrival) : arrival}</span>
                         </div>
                         <div class="info-row">
-                            <span class="info-label">
-                                <i class="fas fa-calendar-times"></i>
-                                עזיבה:
-                            </span>
-                            <span class="info-value">${DateUtils.formatDate(stall.departureDate)}</span>
+                            <span class="info-label"><i class="fas fa-calendar-times"></i> עזיבה:</span>
+                            <span class="info-value">${typeof DateUtils !== 'undefined' ? DateUtils.formatDate(departure) : departure}</span>
                         </div>
                         <div class="info-row">
-                            <span class="info-label">
-                                <i class="fas fa-dollar-sign"></i>
-                                מחיר כולל:
-                            </span>
-                            <span class="info-value">${NumberUtils.formatPrice(stall.totalPrice)}</span>
+                            <span class="info-label"><i class="fas fa-dollar-sign"></i> מחיר כולל:</span>
+                            <span class="info-value">${typeof NumberUtils !== 'undefined' ? NumberUtils.formatPrice(total) : total}</span>
                         </div>
                     </div>
                 </div>
                 <div class="card-footer">
-                    <button class="btn btn-sm btn-primary" onclick="stalls.showEditForm(${stall.stallId})">
-                        <i class="fas fa-edit"></i>
-                        ערוך
+                    <button class="btn btn-sm btn-primary" onclick="stalls.showEditForm(${id})">
+                        <i class="fas fa-edit"></i> ערוך
                     </button>
-                    <button class="btn btn-sm btn-danger" onclick="stalls.confirmDelete(${stall.stallId})">
-                        <i class="fas fa-trash"></i>
-                        מחק
+                    <button class="btn btn-sm btn-danger" onclick="stalls.confirmDelete(${id})">
+                        <i class="fas fa-trash"></i> מחק
                     </button>
                 </div>
             </div>
@@ -151,12 +156,10 @@ const stalls = {
                 </div>
                 <div class="form-actions">
                     <button type="button" class="btn btn-primary" onclick="stalls.saveStall()">
-                        <i class="fas fa-save"></i>
-                        שמור
+                        <i class="fas fa-save"></i> שמור
                     </button>
                     <button type="button" class="btn btn-secondary" onclick="UI.hideModal()">
-                        <i class="fas fa-times"></i>
-                        ביטול
+                        <i class="fas fa-times"></i> ביטול
                     </button>
                 </div>
             </form>
@@ -184,7 +187,7 @@ const stalls = {
 
         try {
             UI.showLoading();
-            const result = await API.stalls.add(stall);
+            await API.stalls.add(stall);
             UI.hideModal();
             UI.showToast('success', 'הצלחה!', 'התא נוסף בהצלחה');
             await this.loadStalls();
@@ -197,60 +200,69 @@ const stalls = {
     },
 
     showEditForm(stallId) {
-        const stall = this.currentData.find(s => s.stallId === stallId);
+        const stall = this.currentData.find(s => (s.stallId || s.StallId) == stallId);
         if (!stall) return;
+
+        // מיפוי שדות לטופס
+        const sId = stall.stallId || stall.StallId;
+        const cId = stall.competitionId || stall.CompetitionId;
+        const hId = stall.horseId || stall.HorseId;
+        const pId = stall.payerId || stall.PayerId;
+        const sNum = stall.stallNumber || stall.StallNumber;
+        const arrDate = stall.arrivalDate || stall.ArrivalDate;
+        const depDate = stall.departureDate || stall.DepartureDate;
+        const dRate = stall.dailyRate || stall.DailyRate;
+        const tPrice = stall.totalPrice || stall.TotalPrice;
 
         const formContent = `
             <form id="stallEditForm" class="modal-form">
-                <input type="hidden" id="editStallId" value="${stall.stallId}">
+                <input type="hidden" id="editStallId" value="${sId}">
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label required">מספר תחרות</label>
-                        <input type="number" class="form-input" id="editCompetitionId" value="${stall.competitionId}" required min="1">
+                        <input type="number" class="form-input" id="editCompetitionId" value="${cId}" required min="1">
                     </div>
                     <div class="form-group">
                         <label class="form-label required">מספר סוס</label>
-                        <input type="number" class="form-input" id="editHorseId" value="${stall.horseId}" required min="1">
+                        <input type="number" class="form-input" id="editHorseId" value="${hId}" required min="1">
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label required">מספר משלם</label>
-                        <input type="number" class="form-input" id="editPayerId" value="${stall.payerId}" required min="1">
+                        <input type="number" class="form-input" id="editPayerId" value="${pId}" required min="1">
                     </div>
                     <div class="form-group">
                         <label class="form-label required">מספר תא</label>
-                        <input type="number" class="form-input" id="editStallNumber" value="${stall.stallNumber}" required min="1">
+                        <input type="number" class="form-input" id="editStallNumber" value="${sNum}" required min="1">
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label required">תאריך הגעה</label>
-                        <input type="date" class="form-input" id="editArrivalDate" value="${DateUtils.toISO(stall.arrivalDate)}" required>
+                        <input type="date" class="form-input" id="editArrivalDate" value="${typeof DateUtils !== 'undefined' ? DateUtils.toISO(arrDate) : arrDate}" required>
                     </div>
                     <div class="form-group">
                         <label class="form-label required">תאריך עזיבה</label>
-                        <input type="date" class="form-input" id="editDepartureDate" value="${DateUtils.toISO(stall.departureDate)}" required>
+                        <input type="date" class="form-input" id="editDepartureDate" value="${typeof DateUtils !== 'undefined' ? DateUtils.toISO(depDate) : depDate}" required>
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label required">תעריף יומי</label>
-                        <input type="number" class="form-input" id="editDailyRate" value="${stall.dailyRate}" required min="0" step="0.01">
+                        <input type="number" class="form-input" id="editDailyRate" value="${dRate}" required min="0" step="0.01">
                     </div>
                     <div class="form-group">
                         <label class="form-label required">מחיר כולל</label>
-                        <input type="number" class="form-input" id="editTotalPrice" value="${stall.totalPrice}" required min="0" step="0.01">
+                        <input type="number" class="form-input" id="editTotalPrice" value="${tPrice}" required min="0" step="0.01">
                     </div>
                 </div>
                 <div class="form-actions">
                     <button type="button" class="btn btn-primary" onclick="stalls.updateStall()">
-                        <i class="fas fa-save"></i>
-                        עדכן
+                        <i class="fas fa-save"></i> עדכן
                     </button>
                     <button type="button" class="btn btn-secondary" onclick="UI.hideModal()">
-                        <i class="fas fa-times"></i>
-                        ביטול
+                        <i class="fas fa-times"></i> ביטול
                     </button>
                 </div>
             </form>
@@ -319,32 +331,31 @@ const stalls = {
             return;
         }
 
-        const filtered = ArrayUtils.search(this.currentData, searchText, [
-            'horseName',
-            'payerName',
-            'competitionName',
-            'stallNumber'
-        ]);
+        const filtered = this.currentData.filter(stall => {
+            const searchStr = searchText.toLowerCase();
+            return (stall.horseName || stall.HorseName || '').toLowerCase().includes(searchStr) ||
+                   (stall.payerName || stall.PayerName || '').toLowerCase().includes(searchStr) ||
+                   (stall.competitionName || stall.CompetitionName || '').toLowerCase().includes(searchStr) ||
+                   (stall.stallNumber || stall.StallNumber || '').toString().includes(searchStr);
+        });
 
         this.displayStalls(filtered);
     },
 
     setupEventListeners() {
         const addBtn = document.getElementById('addStallBtn');
-        if (addBtn) {
-            addBtn.addEventListener('click', () => this.showAddForm());
-        }
+        if (addBtn) addBtn.addEventListener('click', () => this.showAddForm());
 
         const refreshBtn = document.getElementById('refreshStalls');
-        if (refreshBtn) {
-            refreshBtn.addEventListener('click', () => this.loadStalls());
-        }
+        if (refreshBtn) refreshBtn.addEventListener('click', () => this.loadStalls());
 
         const searchInput = document.getElementById('searchStalls');
         if (searchInput) {
-            searchInput.addEventListener('input', PerformanceUtils.debounce((e) => {
-                this.searchStalls(e.target.value);
-            }, 300));
+            let timeout = null;
+            searchInput.addEventListener('input', (e) => {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => this.searchStalls(e.target.value), 300);
+            });
         }
 
         const clearBtn = document.getElementById('clearStallsSearch');
