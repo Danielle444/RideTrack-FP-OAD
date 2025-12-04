@@ -36,8 +36,10 @@ namespace RideTrack_FP_OAD.DAL
                             ArrivalDate = Convert.ToDateTime(reader["ArrivalDate"]),
                             DepartureDate = Convert.ToDateTime(reader["DepartureDate"]),
                             DailyRate = Convert.ToDecimal(reader["DailyRate"]),
-                            TotalPrice = Convert.ToDecimal(reader["TotalPrice"])
-
+                            TotalPrice = Convert.ToDecimal(reader["TotalPrice"]),
+                            CompetitionName = reader["CompetitionName"] != DBNull.Value ? reader["CompetitionName"].ToString() : null,
+                            HorseName = reader["HorseName"] != DBNull.Value ? reader["HorseName"].ToString() : null,
+                            PayerName = reader["PayerName"] != DBNull.Value ? reader["PayerName"].ToString() : null
                         });
                     }
                     return stalls;
@@ -88,7 +90,10 @@ namespace RideTrack_FP_OAD.DAL
                         ArrivalDate = Convert.ToDateTime(reader["ArrivalDate"]),
                         DepartureDate = Convert.ToDateTime(reader["DepartureDate"]),
                         DailyRate = Convert.ToDecimal(reader["DailyRate"]),
-                        TotalPrice = Convert.ToDecimal(reader["TotalPrice"])
+                        TotalPrice = Convert.ToDecimal(reader["TotalPrice"]),
+                        CompetitionName = reader["CompetitionName"] != DBNull.Value ? reader["CompetitionName"].ToString() : null,
+                        HorseName = reader["HorseName"] != DBNull.Value ? reader["HorseName"].ToString() : null,
+                        PayerName = reader["PayerName"] != DBNull.Value ? reader["PayerName"].ToString() : null
                     });
                 }
 

@@ -37,7 +37,11 @@ namespace RideTrack_FP_OAD.DAL
                         Day = Convert.ToDateTime(reader["Day"]),
                         SlotType = reader["SlotType"].ToString(),
                         Price = Convert.ToDecimal(reader["Price"]),
-                        });
+                        CompetitionName = reader["CompetitionName"] != DBNull.Value ? reader["CompetitionName"].ToString() : null,
+                        HorseName = reader["HorseName"] != DBNull.Value ? reader["HorseName"].ToString() : null,
+                        RiderName = reader["RiderName"] != DBNull.Value ? reader["RiderName"].ToString() : null,
+                        PayerName = reader["PayerName"] != DBNull.Value ? reader["PayerName"].ToString() : null
+                    });
                 }
                 return paidtimes;
             }
@@ -126,14 +130,18 @@ namespace RideTrack_FP_OAD.DAL
                     paidtimes.Add(new PaidTimes
                     {
                         PaidTimeId = Convert.ToInt32(reader["PaidTimeId"]),
-                        CompetitionId = Convert.ToInt32(reader["CompetitionId"]),
                         RiderId = Convert.ToInt32(reader["RiderId"]),
                         HorseId = Convert.ToInt32(reader["HorseId"]),
                         PayerId = Convert.ToInt32(reader["PayerId"]),
+                        CompetitionId = Convert.ToInt32(reader["CompetitionId"]),
                         ArenaName = reader["ArenaName"].ToString(),
                         Day = Convert.ToDateTime(reader["Day"]),
                         SlotType = reader["SlotType"].ToString(),
-                        Price = Convert.ToDecimal(reader["Price"])
+                        Price = Convert.ToDecimal(reader["Price"]),
+                        CompetitionName = reader["CompetitionName"] != DBNull.Value ? reader["CompetitionName"].ToString() : null,
+                        HorseName = reader["HorseName"] != DBNull.Value ? reader["HorseName"].ToString() : null,
+                        RiderName = reader["RiderName"] != DBNull.Value ? reader["RiderName"].ToString() : null,
+                        PayerName = reader["PayerName"] != DBNull.Value ? reader["PayerName"].ToString() : null
                     });
                 }
 

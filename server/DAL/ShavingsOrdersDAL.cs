@@ -36,7 +36,11 @@ namespace RideTrack_FP_OAD.DAL
                         OrderDate = Convert.ToDateTime(reader["OrderDate"]),
                         BagsQuantity = Convert.ToInt32(reader["BagsQuantity"]),
                         PricePerBag = Convert.ToDecimal(reader["PricePerBag"]),
-                        TotalPrice = Convert.ToDecimal(reader["TotalPrice"])
+                        TotalPrice = Convert.ToDecimal(reader["TotalPrice"]),
+                        StallNumber = Convert.ToInt32(reader["StallNumber"]),
+                        CompetitionName = reader["CompetitionName"] != DBNull.Value ? reader["CompetitionName"].ToString() : null,
+                        HorseName = reader["HorseName"] != DBNull.Value ? reader["HorseName"].ToString() : null,
+                        PayerName = reader["PayerName"] != DBNull.Value ? reader["PayerName"].ToString() : null
                     });
                 }
 
@@ -85,7 +89,11 @@ namespace RideTrack_FP_OAD.DAL
                         OrderDate = Convert.ToDateTime(reader["OrderDate"]),
                         BagsQuantity = Convert.ToInt32(reader["BagsQuantity"]),
                         PricePerBag = Convert.ToDecimal(reader["PricePerBag"]),
-                        TotalPrice = Convert.ToDecimal(reader["TotalPrice"])
+                        TotalPrice = Convert.ToDecimal(reader["TotalPrice"]),
+                        StallNumber = Convert.ToInt32(reader["StallNumber"]),
+                        CompetitionName = reader["CompetitionName"] != DBNull.Value ? reader["CompetitionName"].ToString() : null,
+                        HorseName = reader["HorseName"] != DBNull.Value ? reader["HorseName"].ToString() : null,
+                        PayerName = reader["PayerName"] != DBNull.Value ? reader["PayerName"].ToString() : null
                     });
                 }
 

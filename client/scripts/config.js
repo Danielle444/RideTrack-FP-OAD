@@ -1,6 +1,6 @@
 
 const API_CONFIG = {
-    baseURL: 'http://localhost:5022',
+    baseURL: 'https://localhost:7196/api',
     timeout: 30000,
     headers: {
         'Content-Type': 'application/json'
@@ -23,18 +23,18 @@ const API_ENDPOINTS = {
         delete: (id) => `/Stalls/${id}`
     },
     shavings: {
-        getAll: '/ShavingsOrders',
-        getByPayer: (payerName) => `/ShavingsOrders/bypayer/${encodeURIComponent(payerName)}`,
-        add: '/ShavingsOrders',
-        update: '/ShavingsOrders',
-        delete: (id) => `/ShavingsOrders/${id}`
+        getAll: '/ShavingOrders',
+        getByPayer: (payerName) => `/ShavingOrders/bypayer/${encodeURIComponent(payerName)}`,
+        add: '/ShavingOrders',
+        update: '/ShavingOrders',
+        delete: (id) => `/ShavingOrders/${id}`
     },
     paidTimes: {
-        getAll: '/PaidTimes',
-        getByPayer: (payerName) => `/PaidTimes/bypayer/${encodeURIComponent(payerName)}`,
-        add: '/PaidTimes',
-        update: '/PaidTimes',
-        delete: (id) => `/PaidTimes/${id}`
+        getAll: '/PaidTime', 
+        getByPayer: (payerName) => `/PaidTime/bypayer/${encodeURIComponent(payerName)}`,
+        add: '/PaidTime',
+        update: '/PaidTime',
+        delete: (id) => `/PaidTime/${id}`
     }
 };
 

@@ -9,10 +9,14 @@ namespace RideTrack_FP_OAD.BL
         public int RiderId { get; set; }
         public int HorseId { get; set; }
         public int PayerId { get; set; }
-        public String ArenaName { get; set; }
-        public DateTime Day { get; set; }
-        public string SlotType { get; set; }
-        public Decimal Price { get; set; }
+        public string? CompetitionName { get; set; }
+        public string? RiderName { get; set; }
+        public string? HorseName { get; set; }
+        public string? PayerName { get; set; }
+        public String? ArenaName { get; set; }
+        public DateTime? Day { get; set; }
+        public string? SlotType { get; set; }
+        public Decimal? Price { get; set; }
 
         internal static List<PaidTimes> GetAllPaidTimes()
         {

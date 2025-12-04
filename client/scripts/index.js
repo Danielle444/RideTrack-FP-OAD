@@ -4,11 +4,44 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupNavigation();
 
     setupModalHandlers();
+    setupMobileNav(); 
+
+    if (typeof entries !== 'undefined') entries.init();
+    if (typeof stalls !== 'undefined') stalls.init();
+    if (typeof shavingsOrders !== 'undefined') shavingsOrders.init();
+    if (typeof paidTimes !== 'undefined') paidTimes.init();
+
+    await updateDashboardCounts();
+
 
     await loadSection('entries');
 
-    await entries.init();
+    if (typeof entries !== 'undefined') {
+        await entries.init();
+    }
 });
+
+// הפונקציה החדשה לטעינת המונים - מותאמת ל-HTML שלך
+async function updateDashboardCounts() {
+    try {
+        // שליחת 4 בקשות במקביל
+        const [allEntries, allStalls, allShavings, allPaidTimes] = await Promise.all([
+            API.entries.getAll(),
+            API.stalls.getAll(),
+            API.shavingsOrders.getAll(),
+            API.paidTimes.getAll()
+        ]);
+
+        // עדכון המספרים ב-HTML לפי ה-IDs הנכונים
+        if (allEntries) document.getElementById('totalEntries').innerText = allEntries.length;
+        if (allStalls) document.getElementById('totalStalls').innerText = allStalls.length;
+        if (allShavings) document.getElementById('totalShavings').innerText = allShavings.length;
+        if (allPaidTimes) document.getElementById('totalPaidTimes').innerText = allPaidTimes.length;
+
+    } catch (error) {
+        console.error("Error updating dashboard counts:", error);
+    }
+}
 
 function setupNavigation() {
     const navLinks = document.querySelectorAll('.nav-link');

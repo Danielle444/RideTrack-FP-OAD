@@ -1,29 +1,37 @@
 /* ================================================
    RideTrack - Entries Module
-   ניהול הרשמות למקצים
+   ניהול הרשמות למקצים (מתוקן)
    ================================================ */
 
 const entries = {
     currentData: [],
 
-    // ========================================
-    // טעינה ראשונית
-    // ========================================
     async init() {
+        // האזנה לאירועים לפני הטעינה
+        this.setupEventListeners(); 
         await this.loadEntries();
-        this.setupEventListeners();
     },
 
-    // ========================================
-    // טעינת כל ההרשמות
-    // ========================================
     async loadEntries() {
         try {
             UI.showLoading();
             const data = await API.entries.getAll();
+            
+            // בדיקה בקונסול כדי לראות איך הנתונים מגיעים (אותיות גדולות/קטנות)
+            console.log('Entries Data Loaded:', data); 
+
             this.currentData = data;
             this.displayEntries(data);
-            UI.updateStats('entries', data.length);
+
+            // --- התיקון הקריטי כאן ---
+            // עדכון ישיר של האלמנט לפי ה-ID שמופיע ב-HTML
+            const totalElement = document.getElementById('totalEntries');
+            if (totalElement) {
+                totalElement.innerText = data.length;
+                totalElement.setAttribute('data-target', data.length); // עדכון גם עבור אנימציות אם יש
+            }
+            // -------------------------
+
             UI.hideEmptyState('entriesEmptyState');
         } catch (error) {
             console.error('Error loading entries:', error);
@@ -34,9 +42,6 @@ const entries = {
         }
     },
 
-    // ========================================
-    // הצגת הרשמות
-    // ========================================
     displayEntries(data) {
         const grid = document.getElementById('entriesGrid');
         
@@ -50,82 +55,67 @@ const entries = {
         grid.innerHTML = data.map(entry => this.createEntryCard(entry)).join('');
     },
 
-    // ========================================
-    // יצירת כרטיס הרשמה
-    // ========================================
     createEntryCard(entry) {
+        // טיפול בבעיית אותיות גדולות/קטנות (Case Sensitivity)
+        // אם השרת מחזיר אות גדולה, נשתמש בה. אחרת באות קטנה.
+        const id = entry.entryId || entry.EntryId;
+        const rider = entry.riderName || entry.RiderName;
+        const horse = entry.horseName || entry.HorseName;
+        const payer = entry.payerName || entry.PayerName;
+        const comp = entry.competitionName || entry.CompetitionName;
+        const clsName = entry.className || entry.ClassName;
+        const clsDay = entry.classDay || entry.ClassDay;
+        const price = entry.classPrice || entry.ClassPrice;
+
         return `
-            <div class="data-card" data-entry-id="${entry.entryId}">
+            <div class="data-card" data-entry-id="${id}">
                 <div class="card-header">
                     <h3 class="card-title">
                         <i class="fas fa-user-circle"></i>
-                        ${entry.riderName}
+                        ${rider}
                     </h3>
-                    <span class="card-badge badge-primary">#${entry.entryId}</span>
+                    <span class="card-badge badge-primary">#${id}</span>
                 </div>
                 <div class="card-body">
                     <div class="card-info">
                         <div class="info-row">
-                            <span class="info-label">
-                                <i class="fas fa-horse"></i>
-                                סוס:
-                            </span>
-                            <span class="info-value">${entry.horseName}</span>
+                            <span class="info-label"><i class="fas fa-horse"></i> סוס:</span>
+                            <span class="info-value">${horse}</span>
                         </div>
                         <div class="info-row">
-                            <span class="info-label">
-                                <i class="fas fa-credit-card"></i>
-                                משלם:
-                            </span>
-                            <span class="info-value">${entry.payerName}</span>
+                            <span class="info-label"><i class="fas fa-credit-card"></i> משלם:</span>
+                            <span class="info-value">${payer}</span>
                         </div>
                         <div class="info-row">
-                            <span class="info-label">
-                                <i class="fas fa-trophy"></i>
-                                תחרות:
-                            </span>
-                            <span class="info-value">${entry.competitionName}</span>
+                            <span class="info-label"><i class="fas fa-trophy"></i> תחרות:</span>
+                            <span class="info-value">${comp}</span>
                         </div>
                         <div class="info-row">
-                            <span class="info-label">
-                                <i class="fas fa-list"></i>
-                                מקצה:
-                            </span>
-                            <span class="info-value">${entry.className}</span>
+                            <span class="info-label"><i class="fas fa-list"></i> מקצה:</span>
+                            <span class="info-value">${clsName}</span>
                         </div>
                         <div class="info-row">
-                            <span class="info-label">
-                                <i class="fas fa-calendar"></i>
-                                תאריך:
-                            </span>
-                            <span class="info-value">${DateUtils.formatDate(entry.classDay)}</span>
+                            <span class="info-label"><i class="fas fa-calendar"></i> תאריך:</span>
+                            <span class="info-value">${typeof DateUtils !== 'undefined' ? DateUtils.formatDate(clsDay) : clsDay}</span>
                         </div>
                         <div class="info-row">
-                            <span class="info-label">
-                                <i class="fas fa-dollar-sign"></i>
-                                מחיר:
-                            </span>
-                            <span class="info-value">${NumberUtils.formatPrice(entry.classPrice)}</span>
+                            <span class="info-label"><i class="fas fa-dollar-sign"></i> מחיר:</span>
+                            <span class="info-value">${typeof NumberUtils !== 'undefined' ? NumberUtils.formatPrice(price) : price}</span>
                         </div>
                     </div>
                 </div>
                 <div class="card-footer">
-                    <button class="btn btn-sm btn-primary" onclick="entries.showEditForm(${entry.entryId})">
-                        <i class="fas fa-edit"></i>
-                        ערוך
+                    <button class="btn btn-sm btn-primary" onclick="entries.showEditForm(${id})">
+                        <i class="fas fa-edit"></i> ערוך
                     </button>
-                    <button class="btn btn-sm btn-danger" onclick="entries.confirmDelete(${entry.entryId})">
-                        <i class="fas fa-trash"></i>
-                        מחק
+                    <button class="btn btn-sm btn-danger" onclick="entries.confirmDelete(${id})">
+                        <i class="fas fa-trash"></i> מחק
                     </button>
                 </div>
             </div>
         `;
     },
 
-    // ========================================
-    // הצגת טופס הוספה
-    // ========================================
     showAddForm() {
         const formContent = `
             <form id="entryForm" class="modal-form">
@@ -151,23 +141,17 @@ const entries = {
                 </div>
                 <div class="form-actions">
                     <button type="button" class="btn btn-primary" onclick="entries.saveEntry()">
-                        <i class="fas fa-save"></i>
-                        שמור
+                        <i class="fas fa-save"></i> שמור
                     </button>
                     <button type="button" class="btn btn-secondary" onclick="UI.hideModal()">
-                        <i class="fas fa-times"></i>
-                        ביטול
+                        <i class="fas fa-times"></i> ביטול
                     </button>
                 </div>
             </form>
         `;
-        
         UI.showModal('הוספת הרשמה חדשה', formContent);
     },
 
-    // ========================================
-    // שמירת הרשמה
-    // ========================================
     async saveEntry() {
         if (!UI.validateForm('entryForm')) {
             UI.showToast('warning', 'שים לב', 'נא למלא את כל השדות');
@@ -183,10 +167,13 @@ const entries = {
 
         try {
             UI.showLoading();
-            const result = await API.entries.add(entry);
+            await API.entries.add(entry);
             UI.hideModal();
             UI.showToast('success', 'הצלחה!', 'ההרשמה נוספה בהצלחה');
-            await this.loadEntries();
+            
+            // עדכון נתונים + עדכון המונה בדשבורד באופן יזום
+            await this.loadEntries(); 
+            
         } catch (error) {
             console.error('Error adding entry:', error);
             UI.showToast('error', 'שגיאה', 'לא ניתן להוסיף הרשמה');
@@ -195,55 +182,54 @@ const entries = {
         }
     },
 
-    // ========================================
-    // הצגת טופס עריכה
-    // ========================================
     showEditForm(entryId) {
-        const entry = this.currentData.find(e => e.entryId === entryId);
+        // חיפוש גמיש (גם ID מספר וגם ID מחרוזת)
+        const entry = this.currentData.find(e => (e.entryId || e.EntryId) == entryId);
         if (!entry) return;
+
+        // שימוש בשדות עם תמיכה באות גדולה/קטנה
+        const rId = entry.riderId || entry.RiderId;
+        const hId = entry.horseId || entry.HorseId;
+        const pId = entry.payerId || entry.PayerId;
+        const cId = entry.classId || entry.ClassId;
+        const eId = entry.entryId || entry.EntryId;
 
         const formContent = `
             <form id="entryEditForm" class="modal-form">
-                <input type="hidden" id="editEntryId" value="${entry.entryId}">
+                <input type="hidden" id="editEntryId" value="${eId}">
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label required">מספר רוכב</label>
-                        <input type="number" class="form-input" id="editRiderId" value="${entry.riderId}" required min="1">
+                        <input type="number" class="form-input" id="editRiderId" value="${rId}" required min="1">
                     </div>
                     <div class="form-group">
                         <label class="form-label required">מספר סוס</label>
-                        <input type="number" class="form-input" id="editHorseId" value="${entry.horseId}" required min="1">
+                        <input type="number" class="form-input" id="editHorseId" value="${hId}" required min="1">
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label required">מספר משלם</label>
-                        <input type="number" class="form-input" id="editPayerId" value="${entry.payerId}" required min="1">
+                        <input type="number" class="form-input" id="editPayerId" value="${pId}" required min="1">
                     </div>
                     <div class="form-group">
                         <label class="form-label required">מספר מקצה</label>
-                        <input type="number" class="form-input" id="editClassId" value="${entry.classId}" required min="1">
+                        <input type="number" class="form-input" id="editClassId" value="${cId}" required min="1">
                     </div>
                 </div>
                 <div class="form-actions">
                     <button type="button" class="btn btn-primary" onclick="entries.updateEntry()">
-                        <i class="fas fa-save"></i>
-                        עדכן
+                        <i class="fas fa-save"></i> עדכן
                     </button>
                     <button type="button" class="btn btn-secondary" onclick="UI.hideModal()">
-                        <i class="fas fa-times"></i>
-                        ביטול
+                        <i class="fas fa-times"></i> ביטול
                     </button>
                 </div>
             </form>
         `;
-        
         UI.showModal('עריכת הרשמה', formContent);
     },
 
-    // ========================================
-    // עדכון הרשמה
-    // ========================================
     async updateEntry() {
         if (!UI.validateForm('entryEditForm')) {
             UI.showToast('warning', 'שים לב', 'נא למלא את כל השדות');
@@ -272,9 +258,6 @@ const entries = {
         }
     },
 
-    // ========================================
-    // אישור מחיקה
-    // ========================================
     confirmDelete(entryId) {
         UI.confirm(
             'מחיקת הרשמה',
@@ -283,15 +266,12 @@ const entries = {
         );
     },
 
-    // ========================================
-    // מחיקת הרשמה
-    // ========================================
     async deleteEntry(entryId) {
         try {
             UI.showLoading();
             await API.entries.delete(entryId);
             UI.showToast('success', 'הצלחה!', 'ההרשמה נמחקה בהצלחה');
-            await this.loadEntries();
+            await this.loadEntries(); // זה יעדכן גם את המונה בדשבורד
         } catch (error) {
             console.error('Error deleting entry:', error);
             UI.showToast('error', 'שגיאה', 'לא ניתן למחוק הרשמה');
@@ -300,51 +280,39 @@ const entries = {
         }
     },
 
-    // ========================================
-    // חיפוש
-    // ========================================
     searchEntries(searchText) {
         if (!searchText || searchText.length < 2) {
             this.displayEntries(this.currentData);
             return;
         }
 
-        const filtered = ArrayUtils.search(this.currentData, searchText, [
-            'riderName',
-            'horseName',
-            'payerName',
-            'competitionName',
-            'className'
-        ]);
+        const filtered = this.currentData.filter(entry => {
+            const searchStr = searchText.toLowerCase();
+            // חיפוש גמיש שמתאים גם ל-camelCase וגם ל-PascalCase
+            return (entry.riderName || entry.RiderName || '').toLowerCase().includes(searchStr) ||
+                   (entry.horseName || entry.HorseName || '').toLowerCase().includes(searchStr) ||
+                   (entry.payerName || entry.PayerName || '').toLowerCase().includes(searchStr);
+        });
 
         this.displayEntries(filtered);
     },
 
-    // ========================================
-    // Event Listeners
-    // ========================================
     setupEventListeners() {
-        // כפתור הוספה
         const addBtn = document.getElementById('addEntryBtn');
-        if (addBtn) {
-            addBtn.addEventListener('click', () => this.showAddForm());
-        }
+        if (addBtn) addBtn.addEventListener('click', () => this.showAddForm());
 
-        // כפתור רענון
         const refreshBtn = document.getElementById('refreshEntries');
-        if (refreshBtn) {
-            refreshBtn.addEventListener('click', () => this.loadEntries());
-        }
+        if (refreshBtn) refreshBtn.addEventListener('click', () => this.loadEntries());
 
-        // חיפוש
         const searchInput = document.getElementById('searchEntries');
         if (searchInput) {
-            searchInput.addEventListener('input', PerformanceUtils.debounce((e) => {
-                this.searchEntries(e.target.value);
-            }, 300));
+            let timeout = null;
+            searchInput.addEventListener('input', (e) => {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => this.searchEntries(e.target.value), 300);
+            });
         }
 
-        // ניקוי חיפוש
         const clearBtn = document.getElementById('clearEntriesSearch');
         if (clearBtn) {
             clearBtn.addEventListener('click', () => {

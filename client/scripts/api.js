@@ -1,7 +1,7 @@
 const API = {
     async request(url, options = {}) {
         try {
-            const response = await fetch({url}, {
+            const response = await fetch(url, {
                 ...options,
                 headers: {
                     'Content-Type': 'application/json',
