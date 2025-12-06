@@ -59,11 +59,11 @@ BEGIN
             CL.ClassDay,
             CL.ClassPrice
         FROM Entries E
-        INNER JOIN Riders       R  ON E.RiderId  = R.RiderId
-        INNER JOIN Horses       H  ON E.HorseId  = H.HorseId
-        INNER JOIN Payers       P  ON E.PayerId  = P.PayerId
-        INNER JOIN Classes      CL ON E.ClassId  = CL.ClassId
-        INNER JOIN Competitions C  ON CL.CompetitionId = C.CompetitionId
+        Left JOIN Riders       R  ON E.RiderId  = R.RiderId
+        Left JOIN Horses       H  ON E.HorseId  = H.HorseId
+        Left JOIN Payers       P  ON E.PayerId  = P.PayerId
+        Left JOIN Classes      CL ON E.ClassId  = CL.ClassId
+        Left JOIN Competitions C  ON CL.CompetitionId = C.CompetitionId
         ORDER BY E.EntryId;
     END TRY
     BEGIN CATCH
@@ -98,11 +98,11 @@ BEGIN
             CL.ClassDay,
             CL.ClassPrice
         FROM Entries E
-        INNER JOIN Riders       R  ON E.RiderId  = R.RiderId
-        INNER JOIN Horses       H  ON E.HorseId  = H.HorseId
-        INNER JOIN Payers       P  ON E.PayerId  = P.PayerId
-        INNER JOIN Classes      CL ON E.ClassId  = CL.ClassId
-        INNER JOIN Competitions C  ON CL.CompetitionId = C.CompetitionId
+        Left JOIN Riders       R  ON E.RiderId  = R.RiderId
+        Left JOIN Horses       H  ON E.HorseId  = H.HorseId
+        Left JOIN Payers       P  ON E.PayerId  = P.PayerId
+        Left JOIN Classes      CL ON E.ClassId  = CL.ClassId
+        Left JOIN Competitions C  ON CL.CompetitionId = C.CompetitionId
         WHERE P.PayerName = @PayerName
         ORDER BY E.EntryId;
     END TRY
@@ -250,9 +250,9 @@ BEGIN
             P.PayerName,
             C.CompetitionName
         FROM Stalls S
-        INNER JOIN Horses       H ON S.HorseId       = H.HorseId
-        INNER JOIN Payers       P ON S.PayerId       = P.PayerId
-        INNER JOIN Competitions C ON S.CompetitionId = C.CompetitionId
+        Left JOIN Horses       H ON S.HorseId       = H.HorseId
+        Left JOIN Payers       P ON S.PayerId       = P.PayerId
+        Left JOIN Competitions C ON S.CompetitionId = C.CompetitionId
         ORDER BY S.StallId;
     END TRY
     BEGIN CATCH
@@ -286,9 +286,9 @@ BEGIN
             P.PayerName,
             C.CompetitionName
         FROM Stalls S
-        INNER JOIN Horses       H ON S.HorseId       = H.HorseId
-        INNER JOIN Payers       P ON S.PayerId       = P.PayerId
-        INNER JOIN Competitions C ON S.CompetitionId = C.CompetitionId
+        Left JOIN Horses       H ON S.HorseId       = H.HorseId
+        Left JOIN Payers       P ON S.PayerId       = P.PayerId
+        Left JOIN Competitions C ON S.CompetitionId = C.CompetitionId
         WHERE P.PayerName = @PayerName
         ORDER BY S.StallId;
     END TRY
@@ -415,10 +415,10 @@ BEGIN
             P.PayerName,
             C.CompetitionName
         FROM ShavingsOrders SO
-        INNER JOIN Stalls       S ON SO.StallId       = S.StallId
-        INNER JOIN Horses       H ON S.HorseId        = H.HorseId
-        INNER JOIN Payers       P ON S.PayerId        = P.PayerId
-        INNER JOIN Competitions C ON S.CompetitionId  = C.CompetitionId
+        Left JOIN Stalls       S ON SO.StallId       = S.StallId
+        Left JOIN Horses       H ON S.HorseId        = H.HorseId
+        Left JOIN Payers       P ON S.PayerId        = P.PayerId
+        Left JOIN Competitions C ON S.CompetitionId  = C.CompetitionId
         ORDER BY SO.ShavingsOrderId;
     END TRY
     BEGIN CATCH
@@ -450,10 +450,10 @@ BEGIN
             P.PayerName,
             C.CompetitionName
         FROM ShavingsOrders SO
-        INNER JOIN Stalls       S ON SO.StallId       = S.StallId
-        INNER JOIN Horses       H ON S.HorseId        = H.HorseId
-        INNER JOIN Payers       P ON S.PayerId        = P.PayerId
-        INNER JOIN Competitions C ON S.CompetitionId  = C.CompetitionId
+        Left JOIN Stalls       S ON SO.StallId       = S.StallId
+        Left JOIN Horses       H ON S.HorseId        = H.HorseId
+        Left JOIN Payers       P ON S.PayerId        = P.PayerId
+        Left JOIN Competitions C ON S.CompetitionId  = C.CompetitionId
         WHERE P.PayerName = @PayerName
         ORDER BY SO.ShavingsOrderId;
     END TRY
@@ -574,10 +574,10 @@ BEGIN
             P.PayerName,
             C.CompetitionName
         FROM PaidTimes PT
-        INNER JOIN Riders       R ON PT.RiderId       = R.RiderId
-        INNER JOIN Horses       H ON PT.HorseId       = H.HorseId
-        INNER JOIN Payers       P ON PT.PayerId       = P.PayerId
-        INNER JOIN Competitions C ON PT.CompetitionId = C.CompetitionId
+        Left JOIN Riders       R ON PT.RiderId       = R.RiderId
+        Left JOIN Horses       H ON PT.HorseId       = H.HorseId
+        Left JOIN Payers       P ON PT.PayerId       = P.PayerId
+        Left JOIN Competitions C ON PT.CompetitionId = C.CompetitionId
         ORDER BY PT.PaidTimeId;
     END TRY
     BEGIN CATCH
@@ -612,10 +612,10 @@ BEGIN
             P.PayerName,
             C.CompetitionName
         FROM PaidTimes PT
-        INNER JOIN Riders       R ON PT.RiderId       = R.RiderId
-        INNER JOIN Horses       H ON PT.HorseId       = H.HorseId
-        INNER JOIN Payers       P ON PT.PayerId       = P.PayerId
-        INNER JOIN Competitions C ON PT.CompetitionId = C.CompetitionId
+        Left JOIN Riders       R ON PT.RiderId       = R.RiderId
+        Left JOIN Horses       H ON PT.HorseId       = H.HorseId
+        Left JOIN Payers       P ON PT.PayerId       = P.PayerId
+        Left JOIN Competitions C ON PT.CompetitionId = C.CompetitionId
         WHERE P.PayerName = @PayerName
         ORDER BY PT.PaidTimeId;
     END TRY
