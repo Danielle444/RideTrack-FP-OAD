@@ -1,6 +1,7 @@
 
 const API_CONFIG = {
     baseURL: 'https://localhost:7196/api',
+    serverUrl: 'https://localhost:7196',
     timeout: 30000,
     headers: {
         'Content-Type': 'application/json'

@@ -35,6 +35,9 @@ namespace RideTrack_FP_OAD.DAL
                         HorseId = Convert.ToInt32(reader["HorseId"]),
                         PayerId = Convert.ToInt32(reader["PayerId"]),
                         ClassId = Convert.ToInt32(reader["ClassId"]),
+                        VeterinaryDocumentPath = reader["VeterinaryDocumentPath"] != DBNull.Value
+                            ? reader["VeterinaryDocumentPath"].ToString()
+                            : null,
                         RiderName = reader["RiderName"].ToString(),
                         HorseName = reader["HorseName"].ToString(),
                         PayerName = reader["PayerName"].ToString(),
@@ -87,6 +90,9 @@ namespace RideTrack_FP_OAD.DAL
                         HorseId = Convert.ToInt32(reader["HorseId"]),
                         PayerId = Convert.ToInt32(reader["PayerId"]),
                         ClassId = Convert.ToInt32(reader["ClassId"]),
+                        VeterinaryDocumentPath = reader["VeterinaryDocumentPath"] != DBNull.Value
+                            ? reader["VeterinaryDocumentPath"].ToString()
+                            : null,
                         RiderName = reader["RiderName"].ToString(),
                         HorseName = reader["HorseName"].ToString(),
                         PayerName = reader["PayerName"].ToString(),
@@ -126,6 +132,9 @@ namespace RideTrack_FP_OAD.DAL
             parmDic.Add("@HorseId", entry.HorseId);
             parmDic.Add("@PayerId", entry.PayerId);
             parmDic.Add("@ClassId", entry.ClassId);
+            parmDic.Add("@VeterinaryDocumentPath", (object?)entry.VeterinaryDocumentPath ?? DBNull.Value);
+
+
             command = CreateCommandWithStoredProcedure("AddEntry", connection, parmDic);
             try
             {
@@ -169,6 +178,7 @@ namespace RideTrack_FP_OAD.DAL
             parmDic.Add("@HorseId", entry.HorseId);
             parmDic.Add("@PayerId", entry.PayerId);
             parmDic.Add("@ClassId", entry.ClassId);
+            parmDic.Add("@VeterinaryDocumentPath", (object?)entry.VeterinaryDocumentPath ?? DBNull.Value);
 
             command = CreateCommandWithStoredProcedure("UpdateEntry", connection, parmDic);
 
@@ -197,6 +207,49 @@ namespace RideTrack_FP_OAD.DAL
                 }
             }
         }
+
+        public int UpdateVeterinaryDocument(int entryId, string documentPath)
+        {
+            try
+            {
+                connection = Connect("DefaultConnection");
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+
+            Dictionary<string, object> parmDic = new Dictionary<string, object>();
+            parmDic.Add("@EntryId", entryId);
+            parmDic.Add("@VeterinaryDocumentPath", documentPath);
+
+            command = CreateCommandWithStoredProcedure("UpdateEntryVeterinaryDocument", connection, parmDic);
+
+            try
+            {
+                reader = command.ExecuteReader(CommandBehavior.CloseConnection);
+                if (reader.Read())
+                {
+                    return Convert.ToInt32(reader["RowsAffected"]);
+                }
+                else
+                {
+                    return 0;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+            finally
+            {
+                if (connection != null)
+                {
+                    connection.Close();
+                }
+            }
+        }
+
         public int DeleteEntry(int entryId)
         {
             try

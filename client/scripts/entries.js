@@ -1,13 +1,9 @@
-/* ================================================
-   RideTrack - Entries Module
-   ניהול הרשמות למקצים (מתוקן)
-   ================================================ */
-
 const entries = {
     currentData: [],
+    selectedFile: null,
 
     async init() {
-        // האזנה לאירועים לפני הטעינה
+        console.log('Initializing entries module...');
         this.setupEventListeners(); 
         await this.loadEntries();
     },
@@ -17,20 +13,15 @@ const entries = {
             UI.showLoading();
             const data = await API.entries.getAll();
             
-            // בדיקה בקונסול כדי לראות איך הנתונים מגיעים (אותיות גדולות/קטנות)
-            console.log('Entries Data Loaded:', data); 
+            console.log('Entries Data Loaded:', data);
 
             this.currentData = data;
             this.displayEntries(data);
-
-            // --- התיקון הקריטי כאן ---
-            // עדכון ישיר של האלמנט לפי ה-ID שמופיע ב-HTML
             const totalElement = document.getElementById('totalEntries');
             if (totalElement) {
                 totalElement.innerText = data.length;
-                totalElement.setAttribute('data-target', data.length); // עדכון גם עבור אנימציות אם יש
+                totalElement.setAttribute('data-target', data.length);
             }
-            // -------------------------
 
             UI.hideEmptyState('entriesEmptyState');
         } catch (error) {
@@ -56,8 +47,6 @@ const entries = {
     },
 
     createEntryCard(entry) {
-        // טיפול בבעיית אותיות גדולות/קטנות (Case Sensitivity)
-        // אם השרת מחזיר אות גדולה, נשתמש בה. אחרת באות קטנה.
         const id = entry.entryId || entry.EntryId;
         const rider = entry.riderName || entry.RiderName;
         const horse = entry.horseName || entry.HorseName;
@@ -66,6 +55,20 @@ const entries = {
         const clsName = entry.className || entry.ClassName;
         const clsDay = entry.classDay || entry.ClassDay;
         const price = entry.classPrice || entry.ClassPrice;
+        const vetDoc = entry.veterinaryDocumentPath || entry.VeterinaryDocumentPath;
+
+        const docStatusHtml = vetDoc 
+            ? `<div class="doc-status doc-uploaded">
+                   <i class="fas fa-check-circle"></i>
+                   <span>מסמך וטרינרי צורף</span>
+                   <button class="btn-view-doc" onclick="window.open('${API_CONFIG.serverUrl}${vetDoc}', '_blank')" title="צפה במסמך">
+                       <i class="fas fa-eye"></i>
+                   </button>
+               </div>`
+            : `<div class="doc-status doc-missing">
+                   <i class="fas fa-exclamation-triangle"></i>
+                   <span>לא צורף מסמך וטרינרי</span>
+               </div>`;
 
         return `
             <div class="data-card" data-entry-id="${id}">
@@ -103,8 +106,14 @@ const entries = {
                             <span class="info-value">${typeof NumberUtils !== 'undefined' ? NumberUtils.formatPrice(price) : price}</span>
                         </div>
                     </div>
+                    ${docStatusHtml}
                 </div>
                 <div class="card-footer">
+                    ${!vetDoc ? `
+                        <button class="btn btn-sm btn-warning" onclick="entries.uploadDocument(${id})">
+                            <i class="fas fa-file-upload"></i> צרף מסמך
+                        </button>
+                    ` : ''}
                     <button class="btn btn-sm btn-primary" onclick="entries.showEditForm(${id})">
                         <i class="fas fa-edit"></i> ערוך
                     </button>
@@ -139,9 +148,44 @@ const entries = {
                         <input type="number" class="form-input" id="classId" required min="1">
                     </div>
                 </div>
+
+                <div class="divider">
+                    <span>מסמך וטרינרי (אופציונלי)</span>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-file-medical"></i>
+                        צרף מסמך וטרינרי של הסוס (PDF, JPG, PNG)
+                    </label>
+                    <div class="file-upload-box" id="fileUploadBox">
+                        <input type="file" 
+                               id="vetDocInput" 
+                               accept=".pdf,.jpg,.jpeg,.png"
+                               style="display: none;">
+                        
+                        <div class="file-upload-placeholder" id="fileUploadPlaceholder">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <p>לחץ לבחירת קובץ או גרור לכאן</p>
+                            <small>PDF, JPG, PNG (עד 5MB)</small>
+                        </div>
+
+                        <div class="file-selected" id="fileSelected" style="display: none;">
+                            <i class="fas fa-file-pdf file-icon"></i>
+                            <div class="file-info">
+                                <span class="file-name" id="selectedFileName"></span>
+                                <span class="file-size" id="selectedFileSize"></span>
+                            </div>
+                            <button type="button" class="btn-remove-file" id="removeFileBtn">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="form-actions">
                     <button type="button" class="btn btn-primary" onclick="entries.saveEntry()">
-                        <i class="fas fa-save"></i> שמור
+                        <i class="fas fa-save"></i> שמור הרשמה
                     </button>
                     <button type="button" class="btn btn-secondary" onclick="UI.hideModal()">
                         <i class="fas fa-times"></i> ביטול
@@ -150,29 +194,129 @@ const entries = {
             </form>
         `;
         UI.showModal('הוספת הרשמה חדשה', formContent);
+        
+        setTimeout(() => {
+            this.setupFileUploadHandlers();
+        }, 100);
+    },
+
+    setupFileUploadHandlers() {
+        const uploadBox = document.getElementById('fileUploadBox');
+        const fileInput = document.getElementById('vetDocInput');
+        const placeholder = document.getElementById('fileUploadPlaceholder');
+        const fileSelected = document.getElementById('fileSelected');
+        const removeBtn = document.getElementById('removeFileBtn');
+
+        if (!uploadBox || !fileInput) return;
+
+        placeholder.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        uploadBox.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadBox.classList.add('drag-over');
+        });
+
+        uploadBox.addEventListener('dragleave', () => {
+            uploadBox.classList.remove('drag-over');
+        });
+
+        uploadBox.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadBox.classList.remove('drag-over');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                this.handleFileSelection(files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                this.handleFileSelection(e.target.files[0]);
+            }
+        });
+
+        if (removeBtn) {
+            removeBtn.addEventListener('click', () => {
+                this.selectedFile = null;
+                fileInput.value = '';
+                placeholder.style.display = 'flex';
+                fileSelected.style.display = 'none';
+            });
+        }
+    },
+
+    handleFileSelection(file) {
+        const placeholder = document.getElementById('fileUploadPlaceholder');
+        const fileSelected = document.getElementById('fileSelected');
+        const fileName = document.getElementById('selectedFileName');
+        const fileSize = document.getElementById('selectedFileSize');
+        const fileIcon = fileSelected.querySelector('.file-icon');
+
+        const extension = file.name.split('.').pop().toLowerCase();
+        const allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png'];
+
+        if (!allowedExtensions.includes(extension)) {
+            UI.showToast('error', 'שגיאה', 'סוג קובץ לא נתמך. השתמש ב-PDF, JPG או PNG');
+            return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
+            UI.showToast('error', 'שגיאה', 'גודל הקובץ חורג מ-5MB');
+            return;
+        }
+        this.selectedFile = file;
+        fileName.textContent = file.name;
+        fileSize.textContent = this.formatFileSize(file.size);
+
+        if (extension === 'pdf') {
+            fileIcon.className = 'fas fa-file-pdf file-icon';
+        } else {
+            fileIcon.className = 'fas fa-file-image file-icon';
+        }
+
+        placeholder.style.display = 'none';
+        fileSelected.style.display = 'flex';
+    },
+
+    formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
     },
 
     async saveEntry() {
         if (!UI.validateForm('entryForm')) {
-            UI.showToast('warning', 'שים לב', 'נא למלא את כל השדות');
+            UI.showToast('warning', 'שים לב', 'נא למלא את כל השדות החובה');
             return;
         }
 
-        const entry = {
-            riderId: parseInt(document.getElementById('riderId').value),
-            horseId: parseInt(document.getElementById('horseId').value),
-            payerId: parseInt(document.getElementById('payerId').value),
-            classId: parseInt(document.getElementById('classId').value)
-        };
-
         try {
             UI.showLoading();
-            await API.entries.add(entry);
-            UI.hideModal();
-            UI.showToast('success', 'הצלחה!', 'ההרשמה נוספה בהצלחה');
             
-            // עדכון נתונים + עדכון המונה בדשבורד באופן יזום
-            await this.loadEntries(); 
+            const entry = {
+                riderId: parseInt(document.getElementById('riderId').value),
+                horseId: parseInt(document.getElementById('horseId').value),
+                payerId: parseInt(document.getElementById('payerId').value),
+                classId: parseInt(document.getElementById('classId').value)
+            };
+
+            const newEntryId = await API.entries.add(entry);
+            
+            if (this.selectedFile) {
+                await this.uploadDocumentForEntry(newEntryId, this.selectedFile);
+                UI.showToast('success', 'הצלחה!', 'ההרשמה נוספה כולל מסמך וטרינרי');
+            } else {
+                UI.showToast('success', 'הצלחה!', 'ההרשמה נוספה בהצלחה');
+            }
+            
+            UI.hideModal();
+            this.selectedFile = null;
+            await this.loadEntries();
             
         } catch (error) {
             console.error('Error adding entry:', error);
@@ -182,12 +326,71 @@ const entries = {
         }
     },
 
-    showEditForm(entryId) {
-        // חיפוש גמיש (גם ID מספר וגם ID מחרוזת)
-        const entry = this.currentData.find(e => (e.entryId || e.EntryId) == entryId);
-        if (!entry) return;
+    async uploadDocumentForEntry(entryId, file) {
+        const formData = new FormData();
+        formData.append('file', file);
 
-        // שימוש בשדות עם תמיכה באות גדולה/קטנה
+        const response = await fetch(
+            `${API_CONFIG.baseURL}/Entries/upload-veterinary-document/${entryId}`,
+            {
+                method: 'POST',
+                body: formData
+            }
+        );
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Failed to upload document: ${errorText}`);
+        }
+
+        return await response.json();
+    },
+
+    uploadDocument(entryId) {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.pdf,.jpg,.jpeg,.png';
+        
+        input.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const extension = file.name.split('.').pop().toLowerCase();
+            const allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png'];
+
+            if (!allowedExtensions.includes(extension)) {
+                UI.showToast('error', 'שגיאה', 'סוג קובץ לא נתמך');
+                return;
+            }
+
+            if (file.size > 5 * 1024 * 1024) {
+                UI.showToast('error', 'שגיאה', 'גודל הקובץ חורג מ-5MB');
+                return;
+            }
+
+            try {
+                UI.showLoading();
+                await this.uploadDocumentForEntry(entryId, file);
+                UI.showToast('success', 'הצלחה!', 'המסמך הוטרינרי הועלה בהצלחה');
+                await this.loadEntries();
+            } catch (error) {
+                console.error('Error uploading document:', error);
+                UI.showToast('error', 'שגיאה', 'לא ניתן להעלות מסמך');
+            } finally {
+                UI.hideLoading();
+            }
+        };
+        
+        input.click();
+    },
+
+    showEditForm(entryId) {
+        const entry = this.currentData.find(e => (e.entryId || e.EntryId) == entryId);
+        if (!entry) {
+            UI.showToast('error', 'שגיאה', 'לא נמצאה הרשמה');
+            return;
+        }
+
         const rId = entry.riderId || entry.RiderId;
         const hId = entry.horseId || entry.HorseId;
         const pId = entry.payerId || entry.PayerId;
@@ -271,7 +474,7 @@ const entries = {
             UI.showLoading();
             await API.entries.delete(entryId);
             UI.showToast('success', 'הצלחה!', 'ההרשמה נמחקה בהצלחה');
-            await this.loadEntries(); // זה יעדכן גם את המונה בדשבורד
+            await this.loadEntries();
         } catch (error) {
             console.error('Error deleting entry:', error);
             UI.showToast('error', 'שגיאה', 'לא ניתן למחוק הרשמה');
@@ -288,10 +491,13 @@ const entries = {
 
         const filtered = this.currentData.filter(entry => {
             const searchStr = searchText.toLowerCase();
-            // חיפוש גמיש שמתאים גם ל-camelCase וגם ל-PascalCase
-            return (entry.riderName || entry.RiderName || '').toLowerCase().includes(searchStr) ||
-                   (entry.horseName || entry.HorseName || '').toLowerCase().includes(searchStr) ||
-                   (entry.payerName || entry.PayerName || '').toLowerCase().includes(searchStr);
+            const rider = (entry.riderName || entry.RiderName || '').toLowerCase();
+            const horse = (entry.horseName || entry.HorseName || '').toLowerCase();
+            const payer = (entry.payerName || entry.PayerName || '').toLowerCase();
+            
+            return rider.includes(searchStr) || 
+                   horse.includes(searchStr) || 
+                   payer.includes(searchStr);
         });
 
         this.displayEntries(filtered);
@@ -299,22 +505,28 @@ const entries = {
 
     setupEventListeners() {
         const addBtn = document.getElementById('addEntryBtn');
-        if (addBtn) addBtn.addEventListener('click', () => this.showAddForm());
+        if (addBtn) {
+            addBtn.addEventListener('click', () => this.showAddForm());
+        }
 
         const refreshBtn = document.getElementById('refreshEntries');
-        if (refreshBtn) refreshBtn.addEventListener('click', () => this.loadEntries());
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', () => this.loadEntries());
+        }
 
         const searchInput = document.getElementById('searchEntries');
         if (searchInput) {
-            let timeout = null;
+            let searchTimeout = null;
             searchInput.addEventListener('input', (e) => {
-                clearTimeout(timeout);
-                timeout = setTimeout(() => this.searchEntries(e.target.value), 300);
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    this.searchEntries(e.target.value);
+                }, 300);
             });
         }
 
         const clearBtn = document.getElementById('clearEntriesSearch');
-        if (clearBtn) {
+        if (clearBtn && searchInput) {
             clearBtn.addEventListener('click', () => {
                 searchInput.value = '';
                 this.searchEntries('');
@@ -322,3 +534,9 @@ const entries = {
         }
     }
 };
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => entries.init());
+} else {
+    entries.init();
+}

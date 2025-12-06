@@ -13,7 +13,7 @@ namespace RideTrack_FP_OAD.BL
         public int HorseId { get; set; }
         public int PayerId { get; set; }
         public int ClassId { get; set; }
-
+       public string? VeterinaryDocumentPath { get; set; }
         public string? RiderName { get; set; }
         public string? HorseName { get; set; }
         public string? PayerName { get; set; }
@@ -38,6 +38,18 @@ namespace RideTrack_FP_OAD.BL
 
             EntriesDAL entriesDAL = new EntriesDAL();
             return entriesDAL.GetEntriesByPayerName(payerName);
+        }
+
+        internal static int UpdateVeterinaryDocument(int entryId, string documentPath)
+        {
+            if (entryId <= 0)
+                throw new ArgumentException("Entry ID must be greater than 0");
+
+            if (string.IsNullOrWhiteSpace(documentPath))
+                throw new ArgumentException("Document path cannot be empty");
+
+            EntriesDAL entriesDAL = new EntriesDAL();
+            return entriesDAL.UpdateVeterinaryDocument(entryId, documentPath);
         }
 
         internal static int AddEntry(Entries entry)
