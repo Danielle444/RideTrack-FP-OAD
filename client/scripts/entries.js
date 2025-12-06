@@ -4,7 +4,10 @@ const entries = {
 
     async init() {
         console.log('Initializing entries module...');
-        this.setupEventListeners(); 
+        // הופך את האובייקט לזמין גלובלית כדי שה-HTML יכיר אותו
+        window.entries = this;
+        
+        this.setupEventListeners();
         await this.loadEntries();
     },
 
@@ -12,7 +15,7 @@ const entries = {
         try {
             UI.showLoading();
             const data = await API.entries.getAll();
-            
+
             console.log('Entries Data Loaded:', data);
 
             this.currentData = data;
@@ -35,7 +38,7 @@ const entries = {
 
     displayEntries(data) {
         const grid = document.getElementById('entriesGrid');
-        
+
         if (!data || data.length === 0) {
             grid.innerHTML = '';
             UI.showEmptyState('entriesEmptyState');
@@ -44,6 +47,23 @@ const entries = {
 
         UI.hideEmptyState('entriesEmptyState');
         grid.innerHTML = data.map(entry => this.createEntryCard(entry)).join('');
+    },
+
+    // פונקציה לפתיחת המסמך - מטפלת בעצירת האירוע בצורה מלאה
+    openDocument(event, url) {
+        // חשוב: עוצר את האירוע כדי שהלחיצה לא תפעיל את הכרטיס שמתחתיו
+        if (event) {
+            event.stopPropagation();
+            event.preventDefault();
+        }
+
+        console.log('Opening document URL:', url);
+
+        if (url && url !== 'undefined' && url !== 'null') {
+            window.open(url, '_blank');
+        } else {
+            UI.showToast('error', 'שגיאה', 'לא נמצא קובץ לפתיחה');
+        }
     },
 
     createEntryCard(entry) {
@@ -57,11 +77,18 @@ const entries = {
         const price = entry.classPrice || entry.ClassPrice;
         const vetDoc = entry.veterinaryDocumentPath || entry.VeterinaryDocumentPath;
 
-        const docStatusHtml = vetDoc 
-            ? `<div class="doc-status doc-uploaded">
+        // בניית כתובת מלאה
+        const fullDocUrl = vetDoc ? `${API_CONFIG.serverUrl}${vetDoc}` : '';
+
+        // יצירת כפתור עם סגנון מוכרח (inline style) כדי לוודא שהוא לחיץ ונמצא מעל הכל
+        const docStatusHtml = vetDoc
+            ? `<div class="doc-status doc-uploaded" style="position: relative; z-index: 5;">
                    <i class="fas fa-check-circle"></i>
                    <span>מסמך וטרינרי צורף</span>
-                   <button class="btn-view-doc" onclick="window.open('${API_CONFIG.serverUrl}${vetDoc}', '_blank')" title="צפה במסמך">
+                   <button class="btn-view-doc" 
+                           onclick="window.entries.openDocument(event, '${fullDocUrl}')" 
+                           title="צפה במסמך"
+                           style="cursor: pointer; position: relative; z-index: 100; pointer-events: auto;">
                        <i class="fas fa-eye"></i>
                    </button>
                </div>`
@@ -71,7 +98,7 @@ const entries = {
                </div>`;
 
         return `
-            <div class="data-card" data-entry-id="${id}">
+            <div class="data-card" data-entry-id="${id}" style="position: relative;">
                 <div class="card-header">
                     <h3 class="card-title">
                         <i class="fas fa-user-circle"></i>
@@ -110,14 +137,14 @@ const entries = {
                 </div>
                 <div class="card-footer">
                     ${!vetDoc ? `
-                        <button class="btn btn-sm btn-warning" onclick="entries.uploadDocument(${id})">
+                        <button class="btn btn-sm btn-warning" onclick="window.entries.uploadDocument(${id})" style="cursor: pointer; z-index: 10;">
                             <i class="fas fa-file-upload"></i> צרף מסמך
                         </button>
                     ` : ''}
-                    <button class="btn btn-sm btn-primary" onclick="entries.showEditForm(${id})">
+                    <button class="btn btn-sm btn-primary" onclick="window.entries.showEditForm(${id})" style="cursor: pointer; z-index: 10;">
                         <i class="fas fa-edit"></i> ערוך
                     </button>
-                    <button class="btn btn-sm btn-danger" onclick="entries.confirmDelete(${id})">
+                    <button class="btn btn-sm btn-danger" onclick="window.entries.confirmDelete(${id})" style="cursor: pointer; z-index: 10;">
                         <i class="fas fa-trash"></i> מחק
                     </button>
                 </div>
@@ -159,11 +186,11 @@ const entries = {
                         צרף מסמך וטרינרי של הסוס (PDF, JPG, PNG)
                     </label>
                     <div class="file-upload-box" id="fileUploadBox">
-                        <input type="file" 
-                               id="vetDocInput" 
+                        <input type="file"
+                               id="vetDocInput"
                                accept=".pdf,.jpg,.jpeg,.png"
                                style="display: none;">
-                        
+
                         <div class="file-upload-placeholder" id="fileUploadPlaceholder">
                             <i class="fas fa-cloud-upload-alt"></i>
                             <p>לחץ לבחירת קובץ או גרור לכאן</p>
@@ -184,7 +211,7 @@ const entries = {
                 </div>
 
                 <div class="form-actions">
-                    <button type="button" class="btn btn-primary" onclick="entries.saveEntry()">
+                    <button type="button" class="btn btn-primary" onclick="window.entries.saveEntry()">
                         <i class="fas fa-save"></i> שמור הרשמה
                     </button>
                     <button type="button" class="btn btn-secondary" onclick="UI.hideModal()">
@@ -194,7 +221,7 @@ const entries = {
             </form>
         `;
         UI.showModal('הוספת הרשמה חדשה', formContent);
-        
+
         setTimeout(() => {
             this.setupFileUploadHandlers();
         }, 100);
@@ -225,7 +252,7 @@ const entries = {
         uploadBox.addEventListener('drop', (e) => {
             e.preventDefault();
             uploadBox.classList.remove('drag-over');
-            
+
             const files = e.dataTransfer.files;
             if (files.length > 0) {
                 this.handleFileSelection(files[0]);
@@ -297,7 +324,7 @@ const entries = {
 
         try {
             UI.showLoading();
-            
+
             const entry = {
                 riderId: parseInt(document.getElementById('riderId').value),
                 horseId: parseInt(document.getElementById('horseId').value),
@@ -306,18 +333,18 @@ const entries = {
             };
 
             const newEntryId = await API.entries.add(entry);
-            
+
             if (this.selectedFile) {
                 await this.uploadDocumentForEntry(newEntryId, this.selectedFile);
                 UI.showToast('success', 'הצלחה!', 'ההרשמה נוספה כולל מסמך וטרינרי');
             } else {
                 UI.showToast('success', 'הצלחה!', 'ההרשמה נוספה בהצלחה');
             }
-            
+
             UI.hideModal();
             this.selectedFile = null;
             await this.loadEntries();
-            
+
         } catch (error) {
             console.error('Error adding entry:', error);
             UI.showToast('error', 'שגיאה', 'לא ניתן להוסיף הרשמה');
@@ -350,7 +377,7 @@ const entries = {
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = '.pdf,.jpg,.jpeg,.png';
-        
+
         input.onchange = async (e) => {
             const file = e.target.files[0];
             if (!file) return;
@@ -380,7 +407,7 @@ const entries = {
                 UI.hideLoading();
             }
         };
-        
+
         input.click();
     },
 
@@ -421,7 +448,7 @@ const entries = {
                     </div>
                 </div>
                 <div class="form-actions">
-                    <button type="button" class="btn btn-primary" onclick="entries.updateEntry()">
+                    <button type="button" class="btn btn-primary" onclick="window.entries.updateEntry()">
                         <i class="fas fa-save"></i> עדכן
                     </button>
                     <button type="button" class="btn btn-secondary" onclick="UI.hideModal()">
@@ -494,9 +521,9 @@ const entries = {
             const rider = (entry.riderName || entry.RiderName || '').toLowerCase();
             const horse = (entry.horseName || entry.HorseName || '').toLowerCase();
             const payer = (entry.payerName || entry.PayerName || '').toLowerCase();
-            
-            return rider.includes(searchStr) || 
-                   horse.includes(searchStr) || 
+
+            return rider.includes(searchStr) ||
+                   horse.includes(searchStr) ||
                    payer.includes(searchStr);
         });
 
@@ -534,6 +561,9 @@ const entries = {
         }
     }
 };
+
+// --- קריטי: הפיכת האובייקט לזמין גלובלית ---
+window.entries = entries;
 
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => entries.init());

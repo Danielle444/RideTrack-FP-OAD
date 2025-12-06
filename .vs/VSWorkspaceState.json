@@ -1,7 +1,11 @@
 {
   "ExpandedNodes": [
-    ""
+    "",
+    "\\server",
+    "\\server\\BL",
+    "\\server\\Controllers",
+    "\\server\\Properties"
   ],
-  "SelectedNode": "\\RideTrack-FP-OAD.sln",
+  "SelectedNode": "\\server\\wwwroot",
   "PreviewInSolutionExplorer": false
 }

@@ -25,6 +25,10 @@ namespace RideTrack_FP_OAD
 
             app.UseHttpsRedirection();
 
+
+            app.UseStaticFiles();
+
+
             app.UseCors(policy => policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
 
             app.UseAuthorization();
